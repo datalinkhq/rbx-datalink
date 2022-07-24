@@ -1,0 +1,9 @@
+{
+	"name": "RBX-DataLink",
+	"tree": {
+		"$className": "DataModel",
+
+		"ServerStorage": { "$className": "ServerStorage", "DataLink": { "$path": "source" }  },
+		"ServerScriptService": { "$className": "ServerScriptService", "DataLink-Tests": { "$path": "tests" } }
+	}
+}

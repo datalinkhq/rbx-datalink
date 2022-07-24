@@ -1,0 +1,5 @@
+return {
+	["Endpoints"] = {
+		["Ping"] = "Ping"
+	}
+}

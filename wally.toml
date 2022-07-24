@@ -1,0 +1,10 @@
+[package]
+name = "datalink/rbx-datalink"
+description = "A futuristic and lightweight analytics platform for upcoming ROBLOX games."
+
+version = "0.1.0"
+license = "MIT"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[dependencies]
