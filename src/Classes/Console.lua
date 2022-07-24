@@ -13,6 +13,14 @@ function Console:log(...)
 	print("[DataLink] ::", ...)
 end
 
+function Console:warn(...)
+	if not Console.DataLink._debugEnabled then
+		return
+	end
+
+	warn("[DataLink] ::", ...)
+end
+
 function Console.new(DataLink)
 	Console.DataLink = DataLink
 
