@@ -1,3 +1,5 @@
+// TODO: Fix Incorrect Type Definitions
+
 declare class PromiseClass {
 	public Get(): any
 	public Cancel(): void
