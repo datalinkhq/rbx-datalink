@@ -4,105 +4,91 @@
 	RBX-DataLink - The Lua Module used in wrapping the DataLink website interface
 ]]--
 
--- // Constants
-local DATALINK_DEBUG_MODE = true
+-- // Services
+local HttpService = game:GetService("HttpService")
 
--- // Modules
+-- // Types
 local DataLinkTypes = require(script.Types)
 
+-- // Modules
+local AuthenticatorModule = require(script.Modules.Authenticator)
 local PromiseModule = require(script.Modules.Promise)
 local SignalModule = require(script.Modules.Signal)
 
-local HttpModule = require(script.Classes.Http)
-local BuilderModule = require(script.Classes.Builder)
-local ConsoleModule = require(script.Classes.Console)
-local AuthenticatorModule = require(script.Classes.Authenticator)
+-- // Classes
+local SchedulerModule = require(script.Classes.Scheduler)
+local HttpsModule = require(script.Classes.Https)
+local IOModule = require(script.Classes.IO)
+
+-- // Modules
+local ErrorModule = require(script.Constants.Errors)
+local EnumModule = require(script.Constants.Enums)
+local EndpointsModule = require(script.Constants.Endpoints)
+local StructModule = require(script.Constants.Struct)
 
 -- // Variables
 local DataLink: DataLinkTypes.DataLinkClass = {
-	Authenticator = AuthenticatorModule,
-
 	onInitialised = SignalModule.new(),
-	initialised = false,
+	onRequestFailed = SignalModule.new(),
+	onRequestSuccess = SignalModule.new(),
 
-	_debugEnabled = DATALINK_DEBUG_MODE,
+	isInitialised = false,
 
-	_types = script.Types,
-	_enums = require(script.Constants.Enumerations),
-	_urlResolves = require(script.Constants.URLResolves),
-	_errorMessages = require(script.Constants.ErrorMessages),
+	Authenticator = AuthenticatorModule,
+	PromiseModule = PromiseModule,
+	SignalModule = SignalModule
 }
 
-function DataLink.fireCustomEvent(eventCategory: string, ...: any): DataLinkTypes.PromiseClass
-	local rawBodyObject = { ... }
-	local httpBody, httpHeaders = DataLink._builder.packet(...), {
-		["categoryUuid"] = eventCategory
-	}
+function DataLink.FireCustomEvent(eventCategory: string, ...: any): DataLinkTypes.PromiseClass
+	assert(DataLink.isInitialised, "DataLink.FireCustomEvent requires DataLink to be initialized!")
+end
 
-	DataLink._console:log(DataLink._enums.InvokeSignalType.CustomEvent, eventCategory, ...)
-	return PromiseModule.new(function(promise)
-		local success, result = DataLink._http.requestAsync(
-			DataLink._builder.build(DataLink._enums.Endpoints.Publish),
-			DataLink._enums.HTTPMethods.Post,
-			httpHeaders, httpBody
+function DataLink.Authenticate()
+	return PromiseModule.new(function(promiseObject)
+		local success, response = DataLink.internal.Https:RequestAsync(
+			DataLink.internal.Enums.StructType.Ping,
+			nil, {
+				id = DataLink.internal.id,
+				token = DataLink.internal.token,
+			}
 		)
 
 		if success then
-			promise:Resolve(result)
+			return promiseObject:Resolve()
 		else
-			promise:Reject(result)
+			return promiseObject:Reject(response)
 		end
-	end):Then(function(_, result)
-		DataLink.onRequestSuccess:Fire(DataLink._enums.InvokeSignalType.CustomEvent, result)
-	end):Catch(function(_, exception)
-		DataLink._console:warn("EventFailure", exception, ":", DataLink._enums.InvokeSignalType.CustomEvent, eventCategory, table.unpack(rawBodyObject))
-		DataLink.onRequestFailed:Fire(DataLink._enums.InvokeSignalType.CustomEvent, eventCategory, rawBodyObject)
-	end)()
+	end):Then(function()
+		DataLink.onInitialised:Fire()
+	end):Catch(function(response)
+		DataLink.internal.IO:Write(DataLink.internal.Enums.IOType.Warn, response)
+	end)():Await()
 end
 
-function DataLink.fireLogEvent(logLevel: Enum, message: string, ...: any): DataLinkTypes.PromiseClass
-	local httpPacket = DataLink._builder.packet(...)
-	local httpHeaders = { }
-
-end
-
-function DataLink.fireEconomyEvent(player: Player, economyAction: Enum, ...: any): DataLinkTypes.PromiseClass
-	local httpPacket = DataLink._builder.packet(...)
-	local httpHeaders = { }
-
-end
-
-function DataLink.fireProgressionEvent(player: Player, category: string, progressionStatus: Enum, ...: any): DataLinkTypes.PromiseClass
-	local httpPacket = DataLink._builder.packet(...)
-	local httpHeaders = { }
-
-end
-
-function DataLink.initialise(authenticatorClass: userdata): nil
-	if DataLink.initialised then
-		return false, DataLink._errorMessages.AlreadyInitialised
+function DataLink.init(authenticatorClass: userdata): nil
+	if DataLink.isInitialised then
+		return false, ErrorModule.AlreadyInitialised
 	end
 
-	DataLink._key = authenticatorClass.key
-	DataLink._id = authenticatorClass.id
+	DataLink.internal = DataLink.internal or {
+		id = authenticatorClass.id,
+		token = authenticatorClass.token,
 
-	DataLink._console = DataLink._console or ConsoleModule.new(DataLink)
-	DataLink._builder = DataLink._builder or BuilderModule.new(DataLink)
-	DataLink._http = DataLink._http or HttpModule.new(DataLink)
+		Scheduler = SchedulerModule.new(DataLink),
+		IO = IOModule.new(DataLink),
+		Https = HttpsModule.new(DataLink),
 
-	if not DataLink._http.HttpEnabled then
-		return false, DataLink._http.HttpError
-	end
+		Enums = EnumModule,
+		Errors = ErrorModule,
+		Struct = StructModule,
+		Endpoint = EndpointsModule
+	}
 
-	DataLink.onRequestFailed = SignalModule.new()
-	DataLink.onRequestSuccess = SignalModule.new()
-
-	DataLink.onInitialised:Fire()
-
-	DataLink.initialised = true
-	DataLink._console:log("Successfully initialized")
-
-	return true
+	return DataLink.Authenticate()
 end
+
+DataLink.onInitialised:Connect(function()
+	DataLink.isInitialised = true
+end)
 
 return DataLink

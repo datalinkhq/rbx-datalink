@@ -1,0 +1,1 @@
+return "/ping?id=%s&token=%s"
