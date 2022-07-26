@@ -31,32 +31,23 @@ function Heartbeat:Authenticate()
 	end)():Await()
 end
 
-function Heartbeat:Clean()
-	if not self.DataLink.internal.sessionKey then
-		return
-	end
-
-	return self.DataLink.PromiseModule.new(function(promiseObject)
+function Heartbeat:Deauthenticate()
+	if self.DataLink.internal.sessionKey then
 		local success, response = self.DataLink.internal.Https:RequestAsync(
 			self.DataLink.internal.Enums.StructType.Destroy
 		)
 
 		if success then
-			self.DataLink.internal.IO:Write(self.DataLink.internal.Enums.IOType.Log, "De-authenticated")
-
-			return promiseObject:Resolve()
+			self.DataLink.internal.sessionKey = nil
+			self.DataLink.internal.IO:Write(self.DataLink.internal.Enums.IOType.Log, "De-Authenticated")
 		else
 			self.DataLink.internal.IO:Write(self.DataLink.internal.Enums.IOType.Warn, response)
-
-			return promiseObject:Reject(response)
 		end
-	end):Then(function()
-		self.DataLink.internal.sessionKey = nil
-	end)():Await()
+	end
 end
 
 function Heartbeat:Heartbeat()
-	self:Clean()
+	self:Deauthenticate()
 	self:Authenticate()
 
 	self.DataLink.internal.IO:Write(self.DataLink.internal.Enums.IOType.Log, "Sent Heartbeat")
@@ -65,6 +56,9 @@ end
 
 function Heartbeat.new(DataLink)
 	local self = setmetatable({ DataLink = DataLink }, { __index = Heartbeat })
+	game:BindToClose(function()
+		self:Deauthenticate()
+	end)
 
 	return self
 end

@@ -50,16 +50,16 @@ function DataLink.init(authenticatorClass: userdata): nil
 		id = authenticatorClass.id,
 		token = authenticatorClass.token,
 
-		IO = IOModule.new(DataLink),
-		Https = HttpsModule.new(DataLink),
-		Scheduler = SchedulerModule.new(DataLink),
-		Heartbeat = HeartbeatModule.new(DataLink),
-
 		Enums = EnumModule,
 		Errors = ErrorModule,
 		Struct = StructModule,
 		Endpoint = EndpointsModule
 	}
+
+	DataLink.internal.IO = IOModule.new(DataLink)
+	DataLink.internal.Https = HttpsModule.new(DataLink)
+	DataLink.internal.Scheduler = SchedulerModule.new(DataLink)
+	DataLink.internal.Heartbeat = HeartbeatModule.new(DataLink)
 
 	return DataLink.internal.Heartbeat:Heartbeat()
 end
