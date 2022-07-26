@@ -6,7 +6,7 @@
 local IO = { }
 
 function IO:Write(...)
-	
+	-- print(...)
 end
 
 function IO.new(DataLink)

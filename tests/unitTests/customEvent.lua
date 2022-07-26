@@ -5,15 +5,15 @@ local DataLink = require(ServerStorage.DataLink)
 local customEventTest = { }
 
 function customEventTest.await()
-	if not DataLink.isInitialised then
-		return DataLink.onInitialised:Wait()
+	if not DataLink.isAuthenticated then
+		return DataLink.onAuthenticated:Wait()
 	end
 end
 
 function customEventTest.run()
 	customEventTest.await()
 
-	DataLink.fireCustomEvent("EventExample", "EventData1", { })
+	DataLink.FireCustomEvent("EventExample", "EventData1", { })
 
 	return true
 end

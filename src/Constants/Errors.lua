@@ -6,6 +6,6 @@ return {
 	["InvalidEndpoint"] = "Invalid Endpoint '%s'",
 
 	["HTTPStatus"] = {
-		
+		[401] = "Invalid ID/Token, Unauthenticated",
 	}
 }

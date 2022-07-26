@@ -11,10 +11,9 @@ local WORKER_IDLE_THREAD = "suspended"
 -- // Variables
 local Scheduler = { }
 
-function Scheduler:CreateWorker(workerId)
+function Scheduler:CreateWorker()
 	return function()
 		while true do
-			debug.profilebegin("Scheduler_Thread_" .. workerId)
 			self.workerCount += 1
 			while #self.queue > 0 do
 				local jobObject = table.remove(self.queue, 1)
@@ -23,8 +22,6 @@ function Scheduler:CreateWorker(workerId)
 			end
 
 			self.workerCount -= 1
-
-			debug.profileend()
 			coroutine.yield()
 		end
 	end
@@ -61,8 +58,8 @@ function Scheduler.new(DataLink)
 		workerCount = 0
 	}, { __index = Scheduler })
 
-	for workerId = 1, MAX_WORKERS do
-		table.insert(self.workers, coroutine.create(self:CreateWorker(workerId)))
+	for _ = 1, MAX_WORKERS do
+		table.insert(self.workers, coroutine.create(self:CreateWorker()))
 	end
 
 	return self

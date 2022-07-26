@@ -143,7 +143,6 @@ end
 
 function PromiseModule.Wrap(Function, ...)
 	return PromiseModule.new(function(Promise, ...)
-		print(...)
 		local Result = { pcall(Function, ...) }
 
 		return (table.remove(Result, 1) and Promise:Resolve(unpack(Result))) or Promise:Reject(unpack(Result))

@@ -4,9 +4,6 @@
 	RBX-DataLink - The Lua Module used in wrapping the DataLink website interface
 ]]--
 
--- // Services
-local HttpService = game:GetService("HttpService")
-
 -- // Types
 local DataLinkTypes = require(script.Types)
 
@@ -16,6 +13,7 @@ local PromiseModule = require(script.Modules.Promise)
 local SignalModule = require(script.Modules.Signal)
 
 -- // Classes
+local HeartbeatModule = require(script.Classes.Heartbeat)
 local SchedulerModule = require(script.Classes.Scheduler)
 local HttpsModule = require(script.Classes.Https)
 local IOModule = require(script.Classes.IO)
@@ -28,11 +26,11 @@ local StructModule = require(script.Constants.Struct)
 
 -- // Variables
 local DataLink: DataLinkTypes.DataLinkClass = {
-	onInitialised = SignalModule.new(),
+	onAuthenticated = SignalModule.new(),
 	onRequestFailed = SignalModule.new(),
 	onRequestSuccess = SignalModule.new(),
 
-	isInitialised = false,
+	isAuthenticated = false,
 
 	Authenticator = AuthenticatorModule,
 	PromiseModule = PromiseModule,
@@ -40,29 +38,7 @@ local DataLink: DataLinkTypes.DataLinkClass = {
 }
 
 function DataLink.FireCustomEvent(eventCategory: string, ...: any): DataLinkTypes.PromiseClass
-	assert(DataLink.isInitialised, "DataLink.FireCustomEvent requires DataLink to be initialized!")
-end
-
-function DataLink.Authenticate()
-	return PromiseModule.new(function(promiseObject)
-		local success, response = DataLink.internal.Https:RequestAsync(
-			DataLink.internal.Enums.StructType.Ping,
-			nil, {
-				id = DataLink.internal.id,
-				token = DataLink.internal.token,
-			}
-		)
-
-		if success then
-			return promiseObject:Resolve()
-		else
-			return promiseObject:Reject(response)
-		end
-	end):Then(function()
-		DataLink.onInitialised:Fire()
-	end):Catch(function(response)
-		DataLink.internal.IO:Write(DataLink.internal.Enums.IOType.Warn, response)
-	end)():Await()
+	assert(DataLink.isAuthenticated, "DataLink.FireCustomEvent requires DataLink to be authenticated!")
 end
 
 function DataLink.init(authenticatorClass: userdata): nil
@@ -74,9 +50,10 @@ function DataLink.init(authenticatorClass: userdata): nil
 		id = authenticatorClass.id,
 		token = authenticatorClass.token,
 
-		Scheduler = SchedulerModule.new(DataLink),
 		IO = IOModule.new(DataLink),
 		Https = HttpsModule.new(DataLink),
+		Scheduler = SchedulerModule.new(DataLink),
+		Heartbeat = HeartbeatModule.new(DataLink),
 
 		Enums = EnumModule,
 		Errors = ErrorModule,
@@ -84,11 +61,7 @@ function DataLink.init(authenticatorClass: userdata): nil
 		Endpoint = EndpointsModule
 	}
 
-	return DataLink.Authenticate()
+	return DataLink.internal.Heartbeat:Heartbeat()
 end
-
-DataLink.onInitialised:Connect(function()
-	DataLink.isInitialised = true
-end)
 
 return DataLink

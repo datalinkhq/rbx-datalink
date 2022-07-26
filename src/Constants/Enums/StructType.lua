@@ -1,4 +1,5 @@
 return {
-	["Ping"] = "Ping",
-	["Publish"] = "Publish"
+	["Authenticate"] = "Authenticate",
+	["Publish"] = "Publish",
+	["Destroy"] = "Destroy"
 }
