@@ -34,17 +34,18 @@ export type AuthenticatorClass = {
 export type DataLinkClass = {
 	Authenticator: AuthenticatorClass,
 
-	initialised: boolean,
+	isAuthenticated: boolean,
 
-	onInitialised: ScriptSignal,
+	onAuthenticated: ScriptSignal,
 	onRequestFailed: ScriptSignal,
 	onRequestSuccess: ScriptSignal,
 
-	initialise: (authenticatorClass: AuthenticatorClass) -> boolean & string,
-	fireCustomEvent: (eventCategory: string, ... any) -> PromiseClass,
-	fireLogEvent: (logLevel: Enum, message: string, ... any) -> PromiseClass,
-	fireEconomyEvent: (player: Player, economyAction: Enum, ... any) -> PromiseClass,
-	fireProgressionEvent: (player: Player, category: string, progressionStatus: Enum, ... any) -> PromiseClass
+	YieldUntilDataLinkIsAuthenticated: () -> nil,
+
+	FireCustomEvent: (eventCategory: string, ... any) -> PromiseClass,
+	FireLogEvent: (logLevel: Enum, message: string, ... any) -> PromiseClass,
+	FireEconomyEvent: (player: Player, economyAction: Enum, ... any) -> PromiseClass,
+	FireProgressionEvent: (player: Player, category: string, progressionStatus: Enum, ... any) -> PromiseClass
 }
 
 return "DataLinkTypes"

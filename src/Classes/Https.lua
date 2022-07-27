@@ -59,6 +59,8 @@ function Https:RequestAsync(structType, body, headers)
 	end)
 
 	if not success then
+		self.DataLink.onRequestFailed:Fire(structType, response)
+
 		return success, response, { }
 	end
 
@@ -72,6 +74,7 @@ function Https:RequestAsync(structType, body, headers)
 		return false, self.DataLink.internal.Errors.HTTPStatus[response.StatusCode] or response.StatusMessage, response.Headers
 	end
 
+	self.DataLink.onRequestSuccess:Fire(structType)
 	return true, HttpService:JSONDecode(response.Body), response.Headers
 end
 
