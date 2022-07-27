@@ -4,6 +4,9 @@
 	RBX-DataLink - The Lua Module used in wrapping the DataLink website interface
 ]]--
 
+-- // Constants
+local TIME_BEFORE_YIELD_WARNING = 5
+
 -- // Types
 local DataLinkTypes = require(script.Types)
 
@@ -38,15 +41,19 @@ local DataLink: DataLinkTypes.DataLinkClass = {
 }
 
 function DataLink.YieldUntilDataLinkIsAuthenticated()
-	local timePassed, callingFunctionName, callingSource = 0, debug.info(2, "ns")
+	local timePassed, hasWarned = 0, false
+	local callingFunctionName, callingSource =  debug.info(2, "ns")
+
+	callingSource = string.split(callingSource, ".")
+	callingSource = callingSource[#callingSource]
 
 	while not DataLink.isAuthenticated do
 		timePassed += task.wait()
 
-		if timePassed and timePassed > 1 then
-			timePassed = nil
+		if not hasWarned and timePassed > TIME_BEFORE_YIELD_WARNING then
+			hasWarned = true
 
-			warn(string.format("Infinite yield possible on '%s' at '%s'", callingFunctionName, callingSource))
+			warn(string.format("Infinite yield possible on '%s.%s(...)'", callingSource, callingFunctionName))
 		end
 	end
 end

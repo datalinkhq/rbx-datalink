@@ -58,6 +58,8 @@ function Https:RequestAsync(structType, body, headers)
 		})
 	end)
 
+	-- print(success, response)
+
 	if not success then
 		self.DataLink.onRequestFailed:Fire(structType, response)
 
@@ -66,11 +68,13 @@ function Https:RequestAsync(structType, body, headers)
 
 	if not response.Success then
 		if response.StatusCode == 401 and response.StatusMessage == INVALID_SESSION_KEY_CONTENT then
+			self.DataLink.internal.IO:Write(self.DataLink.internal.Enums.IOType.Log, "Status 401, Invoking Heartbeat")
 			self.DataLink.internal.Heartbeat:Authenticate()
 
 			return self:RequestAsync(structType, body, headers)
 		end
 
+		self.DataLink.onRequestFailed:Fire(structType, response)
 		return false, self.DataLink.internal.Errors.HTTPStatus[response.StatusCode] or response.StatusMessage, response.Headers
 	end
 

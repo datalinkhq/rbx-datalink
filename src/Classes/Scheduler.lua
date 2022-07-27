@@ -46,8 +46,15 @@ function Scheduler:AddAsync(object)
 end
 
 function Scheduler:JobAsync(callback)
-	self:AddAsync({ callback = callback, thread = coroutine.running() })
-	task.delay(0, self.AssertWorker, self)
+	local jobThread = coroutine.running()
+	task.spawn(function()
+		while coroutine.status(jobThread) ~= WORKER_IDLE_THREAD do
+			task.wait()
+		end
+
+		self:AddAsync({ callback = callback, thread = jobThread })
+		self:AssertWorker()
+	end)
 
 	return coroutine.yield()
 end

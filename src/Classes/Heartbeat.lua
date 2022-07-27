@@ -14,6 +14,7 @@ function Heartbeat:Authenticate()
 	local attemptCount = 1
 
 	self.DataLink.isAuthenticated = false
+	self.DataLink.internal.IO:Write(self.DataLink.internal.Enums.IOType.Log, "Authenticating..")
 	return self.DataLink.PromiseModule.new(function(promiseObject)
 		local success, response = self.DataLink.internal.Https:RequestAsync(
 			self.DataLink.internal.Enums.StructType.Authenticate

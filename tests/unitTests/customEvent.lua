@@ -13,18 +13,7 @@ function customEventTest.countDownFrom(x)
 end
 
 function customEventTest.run()
-	customEventTest.countDownFrom(10)
-	DataLink.FireCustomEvent("EventExample", "EventData1", { }):Then(function(promise)
-		print("ANALYTICS SENT!")
-
-		task.delay(2.5, promise.Retry, promise)
-	end):Catch(function(promise, exception)
-		print("ANALYTICS FAILED:", exception)
-
-		task.delay(2.5, promise.Retry, promise)
-	end)
-
-	print("Custom Event Loop Started!")
+	DataLink.FireCustomEvent("EventExample", "EventData1", { })
 
 	return true
 end

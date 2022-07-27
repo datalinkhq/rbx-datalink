@@ -59,7 +59,7 @@ function SignalObject:Fire(...)
             Callback = coroutine.wrap(Callback)
         end
 
-        Callback(...)
+        task.spawn(Callback, ...)
     end
 
     for _, YieldCoroutine in ipairs(self._Yield) do
@@ -81,7 +81,7 @@ end
 function SignalModule.new()
 	local self = setmetatable({ 
         _Tasks = { }, _Yield = { },
-        UseCoroutines = true
+        UseCoroutines = false
     }, SignalObject)
 
 	return self
