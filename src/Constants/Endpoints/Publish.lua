@@ -1,1 +1,1 @@
-return "/event/publish"
+return "/events/publish"

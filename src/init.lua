@@ -37,8 +37,46 @@ local DataLink: DataLinkTypes.DataLinkClass = {
 	SignalModule = SignalModule
 }
 
+function DataLink.YieldUntilDataLinkIsAuthenticated()
+	local timePassed, callingFunctionName, callingSource = 0, debug.info(2, "ns")
+
+	while not DataLink.isAuthenticated do
+		timePassed += task.wait()
+
+		if timePassed and timePassed > 1 then
+			timePassed = nil
+
+			warn(string.format("Infinite yield possible on '%s' at '%s'", callingFunctionName, callingSource))
+		end
+	end
+end
+
 function DataLink.FireCustomEvent(eventCategory: string, ...: any): DataLinkTypes.PromiseClass
-	assert(DataLink.isAuthenticated, "DataLink.FireCustomEvent requires DataLink to be authenticated!")
+	DataLink.YieldUntilDataLinkIsAuthenticated()
+
+	return DataLink.PromiseModule.new(function(promiseObject)
+		local date = os.date("*t")
+		local success, response = DataLink.internal.Https:RequestAsync(
+			DataLink.internal.Enums.StructType.Publish, {
+				ServerID = (game.JobId ~= "" and game.JobId) or "<studio>",
+				PlaceID = (game.PlaceId ~= 0 and game.PlaceId) or -1,
+				DateISO = string.format("%s-%s-%sT00:00:00.000Z", date.year, date.month, date.day),
+				Packet = {
+					EventName = eventCategory,
+					EventID = eventCategory,
+					PurchaseID = "Whoah, Secret easter egg?"
+				}
+			}
+		)
+
+		DataLink.internal.IO:Write(DataLink.internal.Enums.IOType.Log, "FireCustomEvent [", response, "]")
+
+		if success then
+			return promiseObject:Resolve()
+		else
+			return promiseObject:Reject(response)
+		end
+	end)()
 end
 
 function DataLink.init(authenticatorClass: userdata): nil

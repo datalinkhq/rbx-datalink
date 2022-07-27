@@ -1,9 +1,14 @@
 --[[
+	Https.lua
 
+	This modules function is to provide the DataLink module with the ability to send/receive data from the DataLink API
 ]]--
 
 -- // Services
 local HttpService = game:GetService("HttpService")
+
+-- // Constants
+local INVALID_SESSION_KEY_CONTENT = "Unauthorized"
 
 -- // Variables
 local Https = { }
@@ -58,6 +63,12 @@ function Https:RequestAsync(structType, body, headers)
 	end
 
 	if not response.Success then
+		if response.StatusCode == 401 and response.StatusMessage == INVALID_SESSION_KEY_CONTENT then
+			self.DataLink.internal.Heartbeat:Authenticate()
+
+			return self:RequestAsync(structType, body, headers)
+		end
+
 		return false, self.DataLink.internal.Errors.HTTPStatus[response.StatusCode] or response.StatusMessage, response.Headers
 	end
 

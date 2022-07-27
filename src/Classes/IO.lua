@@ -1,9 +1,17 @@
 --[[
+	IO.lua
 
+	This modules function is to provide the DataLink module a handle to what logs it produces
 ]]--
+
+-- // Services
+local RunService = game:GetService("RunService")
 
 -- // Constants
 local MAX_LOG_CACHE_SIZE = 100
+
+local PRODUCTION_LOG_LEVEL = 5
+local EDGE_PLACE_ID = 10368553785
 
 -- // Variables
 local IO = { }
@@ -20,7 +28,7 @@ function IO:Write(logType, ...)
 		["args"] = { ... }
 	})
 
-	if self.loggingLevel <= logLevel then
+	if self.logLevel <= logLevel then
 		self.logTypeCallbacks[logType](string.format("[DataLink::%s]: ", logType), ...)
 	end
 end
@@ -37,12 +45,12 @@ function IO:Read(count)
 end
 
 function IO:SetLogLevel(level)
-	self.loggingLevel = level
+	self.logLevel = level
 end
 
 function IO.new(DataLink)
 	local self = setmetatable({ DataLink = DataLink }, { __index = IO })
-	self.loggingLevel = 0
+	self.logLevel = 0
 	self.logCache = { }
 	self.logLevels, self.logTypeCallbacks = {
 		[DataLink.internal.Enums.IOType.Log] = 1,
@@ -51,6 +59,11 @@ function IO.new(DataLink)
 		[DataLink.internal.Enums.IOType.Log] = print,
 		[DataLink.internal.Enums.IOType.Warn] = warn
 	}
+
+	if game.PlaceId ~= EDGE_PLACE_ID or not RunService:IsStudio() then
+		self:SetLogLevel(PRODUCTION_LOG_LEVEL)
+		self:Write(DataLink.internal.Enums.IOType.Log, string.format("SetLogLevel %d -> %d [Unknown Environ]", self.logLevel, PRODUCTION_LOG_LEVEL))
+	end
 
 	return self
 end

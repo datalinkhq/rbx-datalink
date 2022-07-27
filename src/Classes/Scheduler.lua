@@ -1,5 +1,7 @@
 --[[
+	Scheduler.lua
 
+	This modules function is to provide a queue & job scheduler for any HTTP requests being sent through the https module
 ]]--
 
 -- // Constants
