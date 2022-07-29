@@ -1,7 +1,7 @@
 local Endpoints = { }
 
 Endpoints.Str = "%s%s"
-Endpoints.Base = "https://datalink.vercel.app/api"
+Endpoints.Base = "http://localhost:3000/api"
 
 Endpoints.URLs = { }
 

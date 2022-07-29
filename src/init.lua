@@ -14,6 +14,7 @@ local DataLinkTypes = require(script.Types)
 local AuthenticatorModule = require(script.Modules.Authenticator)
 local PromiseModule = require(script.Modules.Promise)
 local SignalModule = require(script.Modules.Signal)
+local ISODateModule = require(script.Modules.ISODate)
 
 -- // Classes
 local HeartbeatModule = require(script.Classes.Heartbeat)
@@ -21,7 +22,7 @@ local SchedulerModule = require(script.Classes.Scheduler)
 local HttpsModule = require(script.Classes.Https)
 local IOModule = require(script.Classes.IO)
 
--- // Modules
+-- // Constants
 local ErrorModule = require(script.Constants.Errors)
 local EnumModule = require(script.Constants.Enums)
 local EndpointsModule = require(script.Constants.Endpoints)
@@ -37,7 +38,8 @@ local DataLink: DataLinkTypes.DataLinkClass = {
 
 	Authenticator = AuthenticatorModule,
 	PromiseModule = PromiseModule,
-	SignalModule = SignalModule
+	SignalModule = SignalModule,
+	ISODateModule = ISODateModule
 }
 
 function DataLink.YieldUntilDataLinkIsAuthenticated()
@@ -62,16 +64,13 @@ function DataLink.FireCustomEvent(eventCategory: string, ...: any): DataLinkType
 	DataLink.YieldUntilDataLinkIsAuthenticated()
 
 	return DataLink.PromiseModule.new(function(promiseObject)
-		local date = os.date("*t")
 		local success, response = DataLink.internal.Https:RequestAsync(
 			DataLink.internal.Enums.StructType.Publish, {
-				ServerID = (game.JobId ~= "" and game.JobId) or "<studio>",
+				ServerID = (game.JobId ~= "" and game.JobId) or "12321321631278",
 				PlaceID = (game.PlaceId ~= 0 and game.PlaceId) or -1,
-				DateISO = string.format("%s-%s-%sT00:00:00.000Z", date.year, date.month, date.day),
+				DateISO = ISODateModule.new(),
 				Packet = {
-					EventName = eventCategory,
-					EventID = eventCategory,
-					PurchaseID = "Whoah, Secret easter egg?"
+					EventName = eventCategory
 				}
 			}
 		)
@@ -106,7 +105,8 @@ function DataLink.init(authenticatorClass: userdata): nil
 	DataLink.internal.Scheduler = SchedulerModule.new(DataLink)
 	DataLink.internal.Heartbeat = HeartbeatModule.new(DataLink)
 
-	return DataLink.internal.Heartbeat:Heartbeat()
+	task.spawn(DataLink.internal.Heartbeat.Heartbeat, DataLink.internal.Heartbeat)
+	return DataLink.internal.Heartbeat:Authenticate()
 end
 
 return DataLink

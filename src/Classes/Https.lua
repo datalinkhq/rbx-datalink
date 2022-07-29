@@ -58,8 +58,6 @@ function Https:RequestAsync(structType, body, headers)
 		})
 	end)
 
-	-- print(success, response)
-
 	if not success then
 		self.DataLink.onRequestFailed:Fire(structType, response)
 

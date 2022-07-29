@@ -1,5 +1,6 @@
 return {
 	["Authenticate"] = "Authenticate",
 	["Publish"] = "Publish",
-	["Destroy"] = "Destroy"
+	["Destroy"] = "Destroy",
+	["Heartbeat"] = "Heartbeat",
 }
