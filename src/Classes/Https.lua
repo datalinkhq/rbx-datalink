@@ -38,9 +38,8 @@ end
 function Https:BuildBody(body)
 	body = body or { }
 
-	body.id = self.DataLink.internal.id
-	body.token = self.DataLink.internal.token
-	body.session_key = self.DataLink.internal.sessionKey
+	body.id = body.id or self.DataLink.internal.id
+	body.token = body.token or self.DataLink.internal.token or self.DataLink.internal.key
 
 	return HttpService:JSONEncode(body)
 end
@@ -66,8 +65,8 @@ function Https:RequestAsync(structType, body, headers)
 
 	if not response.Success then
 		if response.StatusCode == 401 and response.StatusMessage == INVALID_SESSION_KEY_CONTENT then
-			self.DataLink.internal.IO:Write(self.DataLink.internal.Enums.IOType.Log, "Status 401, Invoking Heartbeat")
-			self.DataLink.internal.Heartbeat:Authenticate()
+			self.DataLink.internal.IO:Write(self.DataLink.internal.Enums.IOType.Log, "Status 401, Authenticating")
+			self:Authenticate()
 
 			return self:RequestAsync(structType, body, headers)
 		end
@@ -78,6 +77,39 @@ function Https:RequestAsync(structType, body, headers)
 
 	self.DataLink.onRequestSuccess:Fire(structType)
 	return true, HttpService:JSONDecode(response.Body), response.Headers
+end
+
+function Https:Authenticate()
+	local attemptCount = 1
+
+	self.DataLink.internal.token = nil
+	self.DataLink.isAuthenticated = false
+	self.DataLink.internal.IO:Write(self.DataLink.internal.Enums.IOType.Log, "Authenticating..")
+	return self.DataLink.PromiseModule.new(function(promiseObject)
+		local success, response = self:RequestAsync(
+			self.DataLink.internal.Enums.StructType.Authenticate
+		)
+
+		if success then
+			self.DataLink.internal.IO:Write(self.DataLink.internal.Enums.IOType.Log, "Authenticated [" .. response.session_key .. "]")
+			self.DataLink.internal.token = response.session_key
+
+			return promiseObject:Resolve()
+		else
+			self.DataLink.internal.IO:Write(self.DataLink.internal.Enums.IOType.Warn, response)
+
+			return promiseObject:Reject(response)
+		end
+	end):Then(function()
+		self.DataLink.isAuthenticated = true
+		self.DataLink.onAuthenticated:Fire()
+	end):Catch(function(promise)
+		self.DataLink.internal.IO:Write(self.DataLink.internal.Enums.IOType.Log, "Attempting to Authenticate [Attempt: " .. attemptCount .. "]")
+		attemptCount += 1
+
+		task.wait(1)
+		promise:Retry()
+	end)():Await()
 end
 
 function Https.new(DataLink)

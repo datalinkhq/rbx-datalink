@@ -17,7 +17,7 @@ local SignalModule = require(script.Modules.Signal)
 local ISODateModule = require(script.Modules.ISODate)
 
 -- // Classes
-local HeartbeatModule = require(script.Classes.Heartbeat)
+local SessionModule = require(script.Classes.Session)
 local SchedulerModule = require(script.Classes.Scheduler)
 local HttpsModule = require(script.Classes.Https)
 local IOModule = require(script.Classes.IO)
@@ -63,14 +63,16 @@ end
 function DataLink.FireCustomEvent(eventCategory: string, ...: any): DataLinkTypes.PromiseClass
 	DataLink.YieldUntilDataLinkIsAuthenticated()
 
+	local eventParameters = { ... }
 	return DataLink.PromiseModule.new(function(promiseObject)
 		local success, response = DataLink.internal.Https:RequestAsync(
 			DataLink.internal.Enums.StructType.Publish, {
-				ServerID = (game.JobId ~= "" and game.JobId) or "12321321631278",
-				PlaceID = (game.PlaceId ~= 0 and game.PlaceId) or -1,
+				ServerID = (game.JobId ~= "" and game.JobId) or "0000000000000000",
 				DateISO = ISODateModule.new(),
+				PlaceID = game.PlaceId,
 				Packet = {
-					EventName = eventCategory
+					EventName = eventCategory,
+					EventParams = eventParameters
 				}
 			}
 		)
@@ -92,7 +94,7 @@ function DataLink.init(authenticatorClass: userdata): nil
 
 	DataLink.internal = DataLink.internal or {
 		id = authenticatorClass.id,
-		token = authenticatorClass.token,
+		key = authenticatorClass.key,
 
 		Enums = EnumModule,
 		Errors = ErrorModule,
@@ -103,10 +105,14 @@ function DataLink.init(authenticatorClass: userdata): nil
 	DataLink.internal.IO = IOModule.new(DataLink)
 	DataLink.internal.Https = HttpsModule.new(DataLink)
 	DataLink.internal.Scheduler = SchedulerModule.new(DataLink)
-	DataLink.internal.Heartbeat = HeartbeatModule.new(DataLink)
+	DataLink.internal.Session = SessionModule.new(DataLink)
 
-	task.spawn(DataLink.internal.Heartbeat.Heartbeat, DataLink.internal.Heartbeat)
-	return DataLink.internal.Heartbeat:Authenticate()
+	task.spawn(function()
+		DataLink.internal.Https:Authenticate()
+		DataLink.internal.Session:Heartbeat()
+	end)
+
+	return true
 end
 
 return DataLink

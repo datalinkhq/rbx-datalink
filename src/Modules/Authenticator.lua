@@ -13,18 +13,18 @@ local AUTHENTICATOR_NAME = "DataLink-Authenticator"
 -- // Variables
 local Authenticator = { }
 
-function Authenticator.new(id, token)
-	assert(#token == KEY_LENGTH_INT, Errors.InvalidToken)
+function Authenticator.new(id, key)
+	assert(#key == KEY_LENGTH_INT, Errors.InvalidKey)
 
 	local authenticatorProxy = newproxy(true) 
 	local authenticatorMetatable = getmetatable(authenticatorProxy)
 
 	id = tostring(id)
-	token = tostring(token)
+	key = tostring(key)
 
 	authenticatorMetatable.__metatable = "The metatable is locked"
 	authenticatorMetatable.__index = table.freeze(setmetatable(
-		{ id = id, token = token },
+		{ id = id, key = key },
 		{ __index = Authenticator }
 	))
 

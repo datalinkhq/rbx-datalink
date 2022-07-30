@@ -2,7 +2,7 @@ return {
 	["Initialised"] = "DataLink Analytics is already initialized",
 
 	["InvalidId"] = "Invalid Authenticator Id",
-	["InvalidToken"] = "Invalid Authenticator Token",
+	["InvalidKey"] = "Invalid Authenticator Key",
 	["InvalidEndpoint"] = "Invalid Endpoint '%s'",
 
 	["HTTPStatus"] = {
