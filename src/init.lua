@@ -64,6 +64,18 @@ function DatalinkService:FireCustomEvent(eventCategory, ...)
 	end)()
 end
 
+function DatalinkService:FireLogEvent()
+	
+end
+
+function DatalinkService:FireEconomyEvent()
+	
+end
+
+function DatalinkService:FireProgressionEvent()
+	
+end
+
 function DatalinkService:Initialize(developerId, developerKey)
 	assert(not self.isAuthenticated, self.Constants.Errors.Initialized)
 
@@ -72,6 +84,10 @@ function DatalinkService:Initialize(developerId, developerKey)
 
 	for _, className in DatalinkClasses do
 		self[className].init(self)
+	end
+
+	for _, controller in script.Controllers:GetChildren() do
+		require(controller).new(self)
 	end
 
 	self.Https.Authenticate()

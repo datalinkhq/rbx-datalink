@@ -2,6 +2,8 @@ local ServerStorage = game:GetService("ServerStorage")
 
 local DatalinkService = require(ServerStorage.DatalinkService)
 
+local REQUEST_SIZE = 1
+
 local customEventTest = { }
 
 function customEventTest.countDownFrom(x)
@@ -13,7 +15,13 @@ function customEventTest.countDownFrom(x)
 end
 
 function customEventTest.run()
-	DatalinkService:FireCustomEvent("EventExample", "EventData1", { })
+	for index = 1, REQUEST_SIZE do
+		task.spawn(function()
+			DatalinkService:FireCustomEvent("EventExample", "EventData1", { }):Then(function()
+				print("Completed:", index)
+			end)
+		end)
+	end
 
 	return true
 end

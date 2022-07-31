@@ -90,13 +90,23 @@ function Https.Authenticate()
 	Https.Datalink.isAuthenticated = false
 	Https.Datalink.Console:Log("Authenticating..")
 	return Promise.new(function(promiseObject)
-		local success, response = Https.RequestAsync(
-			Https.Datalink.Constants.Enums.Endpoint.Authenticate
-		)
+		local success, response = pcall(function()
+			local resolvedUrl, urlMethod = Https.ResolveUrl(Https.Datalink.Constants.Enums.Endpoint.Authenticate)
+
+			return HttpService:RequestAsync({
+				Url = resolvedUrl,
+				Method = urlMethod,
+
+				Headers = Https.AssertHeaders(),
+				Body = Https.AssertBody()
+			})
+		end)
 
 		if success then
-			Https.Datalink.Console:Log("Authenticated [" .. response.session_key .. "]")
-			Https.Datalink.sessionKey = response.session_key
+			local body = HttpService:JSONDecode(response.Body)
+
+			Https.Datalink.Console:Log("Authenticated [" .. body.session_key .. "]")
+			Https.Datalink.sessionKey = body.session_key
 
 			return promiseObject:Resolve()
 		else
