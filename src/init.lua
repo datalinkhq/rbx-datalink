@@ -1,55 +1,32 @@
---!nocheck 
-
 --[[
-	RBX-DataLink - The Lua Module used in wrapping the DataLink website interface
-]]--
+	DatalinkService.lua
+]]
 
 -- // Constants
 local TIME_BEFORE_YIELD_WARNING = 5
 
--- // Types
-local DataLinkTypes = require(script.Types)
-
 -- // Modules
-local AuthenticatorModule = require(script.Modules.Authenticator)
-local PromiseModule = require(script.Modules.Promise)
-local SignalModule = require(script.Modules.Signal)
-local ISODateModule = require(script.Modules.ISODate)
+local Signal = require(script.Modules.Imports.Signal)
+local ISODate = require(script.Modules.Imports.ISODate)
+local Promise = require(script.Modules.Imports.Promise)
 
--- // Classes
-local SessionModule = require(script.Classes.Session)
-local SchedulerModule = require(script.Classes.Scheduler)
-local HttpsModule = require(script.Classes.Https)
-local IOModule = require(script.Classes.IO)
-
--- // Constants
-local ErrorModule = require(script.Constants.Errors)
-local EnumModule = require(script.Constants.Enums)
-local EndpointsModule = require(script.Constants.Endpoints)
-local StructModule = require(script.Constants.Struct)
-
--- // Variables
-local DataLink: DataLinkTypes.DataLinkClass = {
-	onAuthenticated = SignalModule.new(),
-	onRequestFailed = SignalModule.new(),
-	onRequestSuccess = SignalModule.new(),
-
-	isAuthenticated = false,
-
-	Authenticator = AuthenticatorModule,
-	PromiseModule = PromiseModule,
-	SignalModule = SignalModule,
-	ISODateModule = ISODateModule
+local DatalinkTypes = require(script.Types)
+local DatalinkClasses = {
+	"Console", "Throttle", "Queue", "Https", "Session"
 }
 
-function DataLink.YieldUntilDataLinkIsAuthenticated()
+-- // Variables
+local DatalinkService: DatalinkTypes.DataLinkClass = { }
+
+-- // Functions
+function DatalinkService:YieldUntilDataLinkIsAuthenticated()
 	local timePassed, hasWarned = 0, false
 	local callingFunctionName, callingSource =  debug.info(2, "ns")
 
 	callingSource = string.split(callingSource, ".")
 	callingSource = callingSource[#callingSource]
 
-	while not DataLink.isAuthenticated do
+	while not self.isAuthenticated do
 		timePassed += task.wait()
 
 		if not hasWarned and timePassed > TIME_BEFORE_YIELD_WARNING then
@@ -60,15 +37,15 @@ function DataLink.YieldUntilDataLinkIsAuthenticated()
 	end
 end
 
-function DataLink.FireCustomEvent(eventCategory: string, ...: any): DataLinkTypes.PromiseClass
-	DataLink.YieldUntilDataLinkIsAuthenticated()
+function DatalinkService:FireCustomEvent(eventCategory, ...)
+	self:YieldUntilDataLinkIsAuthenticated()
 
 	local eventParameters = { ... }
-	return DataLink.PromiseModule.new(function(promiseObject)
-		local success, response = DataLink.internal.Https:RequestAsync(
-			DataLink.internal.Enums.StructType.Publish, {
+	return Promise.new(function(promiseObject)
+		local success, response = self.Https.RequestAsync(
+			self.Constants.Enums.Endpoint.Publish, {
 				ServerID = (game.JobId ~= "" and game.JobId) or "0000000000000000",
-				DateISO = ISODateModule.new(),
+				DateISO = ISODate.new(),
 				PlaceID = game.PlaceId,
 				Packet = {
 					EventName = eventCategory,
@@ -77,7 +54,7 @@ function DataLink.FireCustomEvent(eventCategory: string, ...: any): DataLinkType
 			}
 		)
 
-		DataLink.internal.IO:Write(DataLink.internal.Enums.IOType.Log, "FireCustomEvent [", response, "]")
+		self.Console:Log("FireCustomEvent [", response, "]")
 
 		if success then
 			return promiseObject:Resolve()
@@ -87,32 +64,45 @@ function DataLink.FireCustomEvent(eventCategory: string, ...: any): DataLinkType
 	end)()
 end
 
-function DataLink.init(authenticatorClass: userdata): nil
-	if DataLink.isInitialised then
-		return false, ErrorModule.AlreadyInitialised
+function DatalinkService:Initialize(developerId, developerKey)
+	assert(not self.isAuthenticated, self.Constants.Errors.Initialized)
+
+	self.developerKey = developerKey
+	self.developerId = developerId
+
+	for _, className in DatalinkClasses do
+		self[className].init(self)
 	end
 
-	DataLink.internal = DataLink.internal or {
-		id = authenticatorClass.id,
-		key = authenticatorClass.key,
-
-		Enums = EnumModule,
-		Errors = ErrorModule,
-		Struct = StructModule,
-		Endpoint = EndpointsModule
-	}
-
-	DataLink.internal.IO = IOModule.new(DataLink)
-	DataLink.internal.Https = HttpsModule.new(DataLink)
-	DataLink.internal.Scheduler = SchedulerModule.new(DataLink)
-	DataLink.internal.Session = SessionModule.new(DataLink)
-
-	task.spawn(function()
-		DataLink.internal.Https:Authenticate()
-		DataLink.internal.Session:Heartbeat()
-	end)
-
-	return true
+	self.Https.Authenticate()
+	self.isAuthenticated = true
 end
 
-return DataLink
+function DatalinkService.new()
+	local self = setmetatable({ }, { __index = DatalinkService })
+	local serviceProxy = newproxy(true)
+	local serviceMetatable = getmetatable(serviceProxy)
+
+	self.isAuthenticated = false
+
+	self.onAuthenticated = Signal.new()
+	self.onRequestFailed = Signal.new()
+	self.onRequestSuccess = Signal.new()
+
+	self.Constants = require(script.Modules.Constants)
+	self.Console = require(script.Modules.Console)
+	self.Throttle = require(script.Modules.Throttle)
+	self.Queue = require(script.Modules.Queue)
+	self.Https = require(script.Modules.Https)
+	self.Session = require(script.Modules.Session)
+
+	serviceMetatable.__index = self
+	serviceMetatable.__newindex = self
+	function serviceMetatable.__tostring()
+		return "DatalinkService"
+	end
+
+	return self -- serviceProxy
+end
+
+return DatalinkService.new()
