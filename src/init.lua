@@ -19,6 +19,9 @@ local DatalinkClasses = {
 local DatalinkService: DatalinkTypes.DataLinkClass = { }
 
 -- // Functions
+--[=[
+	Yields the active thread until DataLink is authenticated
+]=]
 function DatalinkService:YieldUntilDataLinkIsAuthenticated()
 	local timePassed, hasWarned = 0, false
 	local callingFunctionName, callingSource =  debug.info(2, "ns")
@@ -37,6 +40,13 @@ function DatalinkService:YieldUntilDataLinkIsAuthenticated()
 	end
 end
 
+--[=[
+	Fires a custom event with a custom event name and data
+
+	@param eventCategory string
+	@param ... any
+	@return Promise
+]=]
 function DatalinkService:FireCustomEvent(eventCategory, ...)
 	self:YieldUntilDataLinkIsAuthenticated()
 
@@ -64,18 +74,48 @@ function DatalinkService:FireCustomEvent(eventCategory, ...)
 	end)()
 end
 
-function DatalinkService:FireLogEvent()
+--[=[
+	Fire a log event used to track errors and warnings experienced by players
+
+	@param logLevel Enum.AnalyticsLogLevel
+	@param message string
+	@return Promise
+]=]
+function DatalinkService:FireLogEvent(logLevel, message)
 	
 end
 
-function DatalinkService:FireEconomyEvent()
+--[=[
+	Fire an event used to track player actions pertaining to the in-game economy
+
+	@param player Player
+	@param economyAction Enum.AnalyticsEconomyAction
+	@param ... any
+	@return Promise
+]=]
+function DatalinkService:FireEconomyEvent(player, economyAction, ...)
 	
 end
 
-function DatalinkService:FireProgressionEvent()
+--[=[
+	Fire an event used to track player progression through the game
+
+	@param player Player
+	@param category string
+	@param progressionStatus Enum.AnalyticsProgressionStatus
+	@param ... any
+	@return Promise
+]=]
+function DatalinkService:FireProgressionEvent(player, category, progressionStatus, ...)
 	
 end
 
+--[=[
+	Initialization function for the DatalinkService
+
+	@param developerId string -- Your DeveloperID
+	@param developerKey string -- Your DeveloperKey
+]=]
 function DatalinkService:Initialize(developerId, developerKey)
 	assert(not self.isAuthenticated, self.Constants.Errors.Initialized)
 
@@ -94,6 +134,27 @@ function DatalinkService:Initialize(developerId, developerKey)
 	self.isAuthenticated = true
 end
 
+--[=[
+	@class DatalinkService
+
+	DatalinkService
+]=]
+--[=[
+	@prop isAuthenticated boolean
+	@within DatalinkService
+]=]
+--[=[
+	@prop onAuthenticated RBXScriptSignal
+	@within DatalinkService
+]=]
+--[=[
+	@prop onRequestFailed RBXScriptSignal
+	@within DatalinkService
+]=]
+--[=[
+	@prop onRequestSuccess RBXScriptSignal
+	@within DatalinkService
+]=]
 function DatalinkService.new()
 	local self = setmetatable({ }, { __index = DatalinkService })
 	local serviceProxy = newproxy(true)
