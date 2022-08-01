@@ -9,16 +9,24 @@ return table.freeze({
 		Destroy = { "/destroy", "POST" },
 		Heartbeat = { "/heartbeat", "POST" },
 		Authenticate = { "/auth", "POST" },
+		Log = { "/logs/publish", "POST" }
 	},
 
 	Enums = {
 		Endpoint = {
 			Publish = "Publish",
 			Update = "Update",
+			Log = "Log",
 
 			Destroy = "Destroy",
 			Heartbeat = "Heartbeat",
 			Authenticate = "Authenticate",
+		},
+
+		Event = {
+			"PlayerJoined",
+			"PlayerRemoving",
+			"ServerTerminated"
 		}
 	},
 

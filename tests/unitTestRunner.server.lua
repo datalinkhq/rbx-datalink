@@ -1,5 +1,5 @@
-local DEVELOPER_ID = 10
-local DEVELOPER_GAME_KEY = "80eff350-97f0-4bba-9dae-fe36e0f5d2bd"
+local DEVELOPER_ID = 1
+local DEVELOPER_GAME_KEY = "cc5055f0-29e1-42d4-923f-11a00760a1a8"
 
 local function runUnitModule(unitModule)
 	local success, message = unitModule.run(DEVELOPER_ID, DEVELOPER_GAME_KEY)

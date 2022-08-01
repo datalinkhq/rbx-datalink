@@ -12,7 +12,7 @@ local Promise = require(script.Modules.Imports.Promise)
 
 local DatalinkTypes = require(script.Types)
 local DatalinkClasses = {
-	"Console", "Throttle", "Queue", "Https", "Session"
+	"Console", "Throttle", "Queue", "Https", "Session", "Profiler"
 }
 
 -- // Variables
@@ -79,9 +79,39 @@ end
 
 	@param logLevel Enum.AnalyticsLogLevel
 	@param message string
+	@param trace string
 	@return Promise
 ]=]
-function DatalinkService:FireLogEvent(logLevel, message)
+function DatalinkService:FireLogEvent(logLevel, message, trace)
+	self:YieldUntilDataLinkIsAuthenticated()
+
+	return Promise.new(function(promiseObject)
+		local success, response = self.Https.RequestAsync(
+			self.Constants.Enums.Endpoint.Log, {
+				message = message,
+				trace = trace,
+				type = tostring(logLevel)
+			}
+		)
+
+		self.Console:Log("FireLogEvent [", response, "]")
+
+		if success then
+			return promiseObject:Resolve()
+		else
+			return promiseObject:Reject(response)
+		end
+	end)()
+end
+
+--[=[
+	API used to fire internal datalink events regarding game & player state
+
+	@param internalEnum string
+	@param ... any
+	@return Promise
+]=]
+function DatalinkService:FireInternalEvent(internalEnum, ...)
 	
 end
 
@@ -126,10 +156,6 @@ function DatalinkService:Initialize(developerId, developerKey)
 		self[className].init(self)
 	end
 
-	for _, controller in script.Controllers:GetChildren() do
-		require(controller).new(self)
-	end
-
 	self.Https.Authenticate()
 	self.isAuthenticated = true
 end
@@ -172,6 +198,7 @@ function DatalinkService.new()
 	self.Queue = require(script.Modules.Queue)
 	self.Https = require(script.Modules.Https)
 	self.Session = require(script.Modules.Session)
+	self.Profiler = require(script.Modules.Profiler)
 
 	serviceMetatable.__index = self
 	serviceMetatable.__newindex = self

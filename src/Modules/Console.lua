@@ -21,7 +21,7 @@ function Console:Log(...)
 		return
 	end
 
-	print(...)
+	print("[Datalink][Log]::", ...)
 end
 
 function Console:Warn(...)
@@ -29,7 +29,7 @@ function Console:Warn(...)
 		return
 	end
 
-	warn(...)
+	warn("[Datalink][Warn]::", ...)
 end
 
 function Console.init(Datalink)

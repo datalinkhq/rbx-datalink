@@ -85,9 +85,14 @@ function Https.RequestAsync(endpoint, body, headers)
 end
 
 function Https.Authenticate()
+	if Https.Datalink.isAuthenticating then
+		return
+	end
+
 	local attemptCount = 1
 
 	Https.Datalink.isAuthenticated = false
+	Https.Datalink.isAuthenticating = true
 	Https.Datalink.Console:Log("Authenticating..")
 	return Promise.new(function(promiseObject)
 		local success, response = pcall(function()
@@ -102,7 +107,7 @@ function Https.Authenticate()
 			})
 		end)
 
-		if success then
+		if success and response.StatusCode == 200 then
 			local body = HttpService:JSONDecode(response.Body)
 
 			Https.Datalink.Console:Log("Authenticated [" .. body.session_key .. "]")
@@ -110,12 +115,13 @@ function Https.Authenticate()
 
 			return promiseObject:Resolve()
 		else
-			Https.Datalink.Console:Warn(response)
+			Https.Datalink.Console:Warn((type(response) == "string" and response) or response.StatusMessage)
 
 			return promiseObject:Reject(response)
 		end
 	end):Then(function()
 		Https.Datalink.isAuthenticated = true
+		Https.Datalink.isAuthenticating = false
 		Https.Datalink.onAuthenticated:Fire()
 	end):Catch(function(promise)
 		Https.Datalink.Console:Log("Attempting to Authenticate [Attempt: " .. attemptCount .. "]")
