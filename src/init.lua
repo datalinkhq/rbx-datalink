@@ -2,8 +2,13 @@
 	DatalinkService.lua
 ]]
 
+-- // Services
+local RunService = game:GetService("RunService")
+
 -- // Constants
 local TIME_BEFORE_YIELD_WARNING = 5
+local IS_SERVER = RunService:IsServer()
+local IS_DEBBUG_ENABLED = true
 
 -- // Modules
 local Signal = require(script.Modules.Imports.Signal)
@@ -85,12 +90,18 @@ end
 function DatalinkService:FireLogEvent(logLevel, message, trace)
 	self:YieldUntilDataLinkIsAuthenticated()
 
+	if not IS_DEBBUG_ENABLED and IS_SERVER then
+		return
+	end
+
+	assert(logLevel.EnumType == Enum.AnalyticsLogLevel, "Expected Enum.AnalyticsLogLevel, got " .. type(logLevel))
+
 	return Promise.new(function(promiseObject)
 		local success, response = self.Https.RequestAsync(
 			self.Constants.Enums.Endpoint.Log, {
 				message = message,
 				trace = trace,
-				type = tostring(logLevel)
+				type = logLevel.Name
 			}
 		)
 
@@ -111,8 +122,24 @@ end
 	@param ... any
 	@return Promise
 ]=]
-function DatalinkService:FireInternalEvent(internalEnum, ...)
-	
+function DatalinkService:FireInternalEvent(internalEnum, body)
+	self:YieldUntilDataLinkIsAuthenticated()
+
+	if not IS_DEBBUG_ENABLED and IS_SERVER then
+		return
+	end
+
+	return Promise.new(function(promiseObject)
+		local success, response = self.Https.RequestAsync(internalEnum, body)
+
+		self.Console:Log("FireInternalEvent [", response, "]")
+
+		if success then
+			return promiseObject:Resolve()
+		else
+			return promiseObject:Reject(response)
+		end
+	end)()
 end
 
 --[=[

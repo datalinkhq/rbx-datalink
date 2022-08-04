@@ -6,6 +6,7 @@
 
 -- // Services
 local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
 
 -- // Constants
 local INVALID_SESSION_KEY_CONTENT = "Unauthorized"
@@ -103,7 +104,9 @@ function Https.Authenticate()
 				Method = urlMethod,
 
 				Headers = Https.AssertHeaders(),
-				Body = Https.AssertBody()
+				Body = Https.AssertBody({
+					isStudio = RunService:IsStudio()
+				})
 			})
 		end)
 

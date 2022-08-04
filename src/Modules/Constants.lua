@@ -1,6 +1,6 @@
 return table.freeze({
 	Model = "%s%s",
-	Api = "https://datalink.dev/api",
+	Api = "http://localhost:3000/api", -- "https://datalink.dev/api",
 
 	Endpoints = {
 		Publish = { "/events/publish", "POST" },
@@ -9,7 +9,11 @@ return table.freeze({
 		Destroy = { "/destroy", "POST" },
 		Heartbeat = { "/heartbeat", "POST" },
 		Authenticate = { "/auth", "POST" },
-		Log = { "/logs/publish", "POST" }
+		Log = { "/logs/publish", "POST" },
+
+		PlayerJoined = { "/internal/playerJoined", "POST" },
+		PlayerRemoving = { "/internal/playerRemoving", "POST" },
+		ServerTerminated = { "/internal/serverTerminated", "POST" }
 	},
 
 	Enums = {
@@ -24,9 +28,9 @@ return table.freeze({
 		},
 
 		Event = {
-			"PlayerJoined",
-			"PlayerRemoving",
-			"ServerTerminated"
+			PlayerJoined = "PlayerJoined",
+			PlayerRemoving = "PlayerRemoving",
+			ServerTerminated = "ServerTerminated"
 		}
 	},
 

@@ -7,18 +7,23 @@
 -- // Services
 local PlayersService = game:GetService("Players")
 local LogService = game:GetService("LogService")
+local ScriptContext = game:GetService("ScriptContext")
 local LocalizationService = game:GetService("LocalizationService")
 
 -- // Variables
 local Profiler = { }
 local Players = { }
 local GameProfile = { PlayersJoined = 0, GameTime = 0 }
-local DropLogRequestKeywords = { "Datalink", "Unhandled Promise Rejection" }
+local DropLogRequestKeywords = { "datalink", "promise" }
 local MessageTypeChannels = {
 	[Enum.MessageType.MessageError] = Enum.AnalyticsLogLevel.Error,
 	[Enum.MessageType.MessageWarning] = Enum.AnalyticsLogLevel.Warning,
 	[Enum.MessageType.MessageInfo] = Enum.AnalyticsLogLevel.Information,
 	[Enum.MessageType.MessageOutput] = Enum.AnalyticsLogLevel.Debug,
+}
+local IgnoredMessageTypes = {
+	[Enum.MessageType.MessageError] = true,
+	[Enum.MessageType.MessageInfo] = true,
 }
 
 function Profiler.OnPlayerAdded(player)
@@ -54,14 +59,28 @@ function Profiler.OnPlayerLeaving(player)
 	})
 end
 
-function Profiler.OnMessageOut(message, type)
+function Profiler.OnMessageOut(message, messageType)
 	for _, keyword in DropLogRequestKeywords do
-		if string.find(message, keyword) then
+		if string.find(string.lower(message), keyword) then
 			return
 		end
 	end
 
-	Profiler.Datalink:FireLogEvent(MessageTypeChannels[type], message, "<unknown>"):Catch(function() end)
+	if IgnoredMessageTypes[messageType] then
+		return
+	end
+
+	Profiler.Datalink:FireLogEvent(MessageTypeChannels[messageType], message, "<unknown>"):Catch(function() end)
+end
+
+function Profiler.OnErrorOut(message, stack)
+	for _, keyword in DropLogRequestKeywords do
+		if string.find(string.lower(stack), keyword) then
+			return
+		end
+	end
+
+	Profiler.Datalink:FireLogEvent(Enum.AnalyticsLogLevel.Error, message, stack):Catch(function() end)
 end
 
 function Profiler.OnGameShutdown()
@@ -84,11 +103,11 @@ function Profiler.init(Datalink)
 	PlayersService.PlayerRemoving:Connect(Profiler.OnPlayerLeaving)
 
 	LogService.MessageOut:Connect(Profiler.OnMessageOut)
+	ScriptContext.Error:Connect(Profiler.OnErrorOut)
 
 	Profiler.ForEach(LogService:GetLogHistory(), Profiler.OnMessageOut)
 	Profiler.ForEach(PlayersService:GetPlayers(), function(object)
-		print(object)
-		Profiler.OnPlayerAdded(table.unpack(object))
+		Profiler.OnPlayerAdded(object)
 	end)
 
 	game:BindToClose(function()

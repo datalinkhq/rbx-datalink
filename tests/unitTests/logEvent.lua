@@ -2,7 +2,7 @@ local ServerStorage = game:GetService("ServerStorage")
 
 local DatalinkService = require(ServerStorage.DatalinkService)
 
-local REQUEST_SIZE = 1
+local REQUEST_SIZE = 0
 
 local customEventTest = { }
 
@@ -17,7 +17,7 @@ end
 function customEventTest.run()
 	for index = 1, REQUEST_SIZE do
 		task.spawn(function()
-			DatalinkService:FireLogEvent("error", "Error Message", "Error Trace"):Then(function()
+			DatalinkService:FireLogEvent(Enum.AnalyticsLogLevel.Error, "Error Message", "Error Trace"):Then(function()
 				print("Completed:", index)
 			end)
 		end)
