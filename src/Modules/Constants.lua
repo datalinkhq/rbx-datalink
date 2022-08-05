@@ -1,6 +1,6 @@
 return table.freeze({
 	Model = "%s%s",
-	Api = "http://localhost:3000/api", -- "https://datalink.dev/api",
+	Api = "https://datalink.dev/api",
 
 	Endpoints = {
 		Publish = { "/events/publish", "POST" },
@@ -12,7 +12,7 @@ return table.freeze({
 		Log = { "/logs/publish", "POST" },
 
 		PlayerJoined = { "/internal/playerJoined", "POST" },
-		PlayerRemoving = { "/internal/playerRemoving", "POST" },
+		PlayerRemoving = { "/internal/playerLeft", "POST" },
 		ServerTerminated = { "/internal/serverTerminated", "POST" }
 	},
 
