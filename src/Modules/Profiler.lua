@@ -55,7 +55,7 @@ function Profiler.OnPlayerLeaving(player)
 
 	Profiler.Datalink:FireInternalEvent(Profiler.Datalink.Constants.Enums.Event.PlayerRemoving, {
 		accountId = uniqueId,
-		sessionTime = timeJoined - os.clock()
+		sessionTime = os.clock() - timeJoined
 	})
 end
 
