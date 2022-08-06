@@ -17,7 +17,7 @@ local Promise = require(script.Modules.Imports.Promise)
 
 local DatalinkTypes = require(script.Types)
 local DatalinkClasses = {
-	"Console", "Throttle", "Queue", "Https", "Session", "Profiler"
+	"Console", "Throttle", "Queue", "Https", "Session", "Profiler", "Controller"
 }
 
 -- // Variables
@@ -69,7 +69,7 @@ function DatalinkService:FireCustomEvent(eventCategory, ...)
 			}
 		)
 
-		self.Console:Log("FireCustomEvent [", response, "]")
+		self.Console:Log("FireCustomEvent :", eventCategory, "[", response, "]")
 
 		if success then
 			return promiseObject:Resolve()
@@ -132,7 +132,7 @@ function DatalinkService:FireInternalEvent(internalEnum, body)
 	return Promise.new(function(promiseObject)
 		local success, response = self.Https.RequestAsync(internalEnum, body)
 
-		self.Console:Log("FireInternalEvent [", response, "]")
+		self.Console:Log("FireInternalEvent :", internalEnum, "[", response, "]")
 
 		if success then
 			return promiseObject:Resolve()
@@ -226,6 +226,8 @@ function DatalinkService.new()
 	self.Https = require(script.Modules.Https)
 	self.Session = require(script.Modules.Session)
 	self.Profiler = require(script.Modules.Profiler)
+
+	self.Controller = require(script.Controller)
 
 	serviceMetatable.__index = self
 	serviceMetatable.__newindex = self

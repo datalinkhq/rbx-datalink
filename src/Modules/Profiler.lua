@@ -43,6 +43,7 @@ function Profiler.OnPlayerAdded(player)
 		locale = player.LocaleId,
 		accountId = uniqueId,
 		region = (regionSuccess and playerRegion) or "unknown",
+		device = Profiler.Datalink.Controller.FetchDeviceType(player)
 	})
 end
 
