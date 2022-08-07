@@ -16,6 +16,7 @@ local ISODate = require(script.Modules.Imports.ISODate)
 local Promise = require(script.Modules.Imports.Promise)
 
 local DatalinkTypes = require(script.Types)
+local DatalinkCache = { }
 local DatalinkClasses = {
 	"Console", "Throttle", "Queue", "Https", "Session", "Profiler", "Controller"
 }
@@ -194,7 +195,11 @@ end
 	@param featureName string
 	@return boolean
 ]=]
-function DatalinkService:GetFastFlag(featureName)
+function DatalinkService:GetFastFlag(featureName, ignoreCache)
+	if not ignoreCache and DatalinkCache[featureName] then
+		return DatalinkCache[featureName]
+	end
+
 	local featureInt = self:GetFastInt(featureName, 1)
 	local uniqueValue = 0
 
