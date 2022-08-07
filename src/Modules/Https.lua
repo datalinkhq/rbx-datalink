@@ -54,6 +54,14 @@ function Https.RequestAsync(endpoint, body, headers)
 	local success, response = Https.Datalink.Queue.Add(function()
 		local resolvedUrl, urlMethod = Https.ResolveUrl(endpoint)
 
+		print({
+			Url = resolvedUrl,
+			Method = urlMethod,
+
+			Headers = Https.AssertHeaders(headers),
+			Body = Https.AssertBody(body)
+		})
+
 		return HttpService:RequestAsync({
 			Url = resolvedUrl,
 			Method = urlMethod,

@@ -13,7 +13,8 @@ return table.freeze({
 
 		PlayerJoined = { "/internal/playerJoined", "POST" },
 		PlayerRemoving = { "/internal/playerLeft", "POST" },
-		ServerTerminated = { "/internal/serverTerminated", "POST" }
+		ServerTerminated = { "/internal/serverTerminated", "POST" },
+		FlagFetch = { "/ff/fetch", "POST" }
 	},
 
 	Enums = {
@@ -21,6 +22,8 @@ return table.freeze({
 			Publish = "Publish",
 			Update = "Update",
 			Log = "Log",
+
+			FlagFetch = "FlagFetch",
 
 			Destroy = "Destroy",
 			Heartbeat = "Heartbeat",

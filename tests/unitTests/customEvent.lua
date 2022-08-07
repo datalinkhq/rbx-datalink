@@ -17,9 +17,7 @@ end
 function customEventTest.run()
 	for index = 1, REQUEST_SIZE do
 		task.spawn(function()
-			DatalinkService:FireCustomEvent("EventExample", "EventData1", { }):Then(function()
-				print("Completed:", index)
-			end)
+			DatalinkService:FireCustomEvent("EventExample", "EventData1", { })
 		end)
 	end
 

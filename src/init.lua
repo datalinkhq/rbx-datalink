@@ -168,6 +168,48 @@ function DatalinkService:FireProgressionEvent(player, category, progressionStatu
 end
 
 --[=[
+	Returns a int defining the state of a fast flag
+
+	@param featureName string
+	@param default number
+	@return number
+]=]
+function DatalinkService:GetFastInt(featureName, default)
+	return Promise.new(function(promiseObject)
+		local success, response = self.Https.RequestAsync(
+			self.Constants.Enums.Endpoint.FlagFetch, {
+				name = featureName
+			}
+		)
+
+		self.Console:Log("GetFastInt :", featureName, "[", response, "]")
+
+		promiseObject:Resolve((success and response) or default, success, response)
+	end)():Await()
+end
+
+--[=[
+	Validate if a feature is enabled for this server
+
+	@param featureName string
+	@return boolean
+]=]
+function DatalinkService:GetFastFlag(featureName)
+	local featureInt = self:GetFastInt(featureName, 1)
+	local uniqueValue = 0
+
+	for _, byteValue in { string.byte(game.JobId, 1, #game.JobId) } do
+		uniqueValue += byteValue
+	end
+
+	if featureInt == 0 then
+		return true
+	else
+		return uniqueValue % (1 / featureInt) ~= 0
+	end
+end
+
+--[=[
 	Initialization function for the DatalinkService
 
 	@param developerId string -- Your DeveloperID
