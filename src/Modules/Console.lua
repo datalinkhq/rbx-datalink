@@ -4,38 +4,58 @@
 	This modules function is to provide the DataLink module a handle to what logs it produces
 ]]--
 
--- // Services
-local RunService = game:GetService("RunService")
-
 -- // Constants
-local MAX_LOG_CACHE_SIZE = 100
+local MAX_CACHE_SIZE = 450
+local LOG_PREFIX = ":: "
+local LOG_FORMAT = "[%s][%s]%s"
 
-local PRODUCTION_LOG_LEVEL = 5
-local EDGE_PLACE_ID = 10368553785
+local DEBUG_NAME = "DataLink.Debug"
 
 -- // Variables
 local Console = { }
+local Cache = { }
 
-function Console:Log(...)
-	if Console.logLevel > 1 then
-		return
-	end
-
-	print("[Datalink][Log]::", ...)
+function Console:CreateMessage(messageType, ...)
+	return {
+		messageType = messageType,
+		message = { ... }
+	}
 end
 
-function Console:Warn(...)
-	if Console.logLevel > 2 then
-		return
+function Console:Cache(messageObject)
+	if #Cache + 1 >= MAX_CACHE_SIZE then
+		table.remove(Cache, #Cache)
 	end
 
-	warn("[Datalink][Warn]::", ...)
+	table.insert(Cache, messageObject)
+end
+
+function Console:SetLoggingLevel(level)
+	self.logLevel = level
 end
 
 function Console.init(Datalink)
+	Console.Datalink = Datalink
 	Console.logLevel = 0
 
-	Console.Datalink = Datalink
+	for _, apiPrototype in {
+		{ "Log", 1, print },
+		{ "Warn", 2, warn },
+		{ "Error", 3, error }
+	} do
+		Console[apiPrototype[1]] = function(_, ...)
+			local messageObject = Console:CreateMessage(apiPrototype[1], ...)
+			messageObject.format = string.format(LOG_FORMAT, "DataLink", apiPrototype[1], LOG_PREFIX)
+
+			if Console.logLevel > apiPrototype[2] and not Datalink:GetVariable(DEBUG_NAME) then
+				Console:Cache(messageObject)
+			else
+				apiPrototype[3](messageObject.format, ...)
+
+				Console:Cache(messageObject)
+			end
+		end
+	end
 end
 
 return Console

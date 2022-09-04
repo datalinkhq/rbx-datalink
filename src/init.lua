@@ -7,8 +7,13 @@ local RunService = game:GetService("RunService")
 
 -- // Constants
 local TIME_BEFORE_YIELD_WARNING = 5
+
+local DATALINK_DEBUG_NAME = "DataLink.Debug"
+local DATALINK_BRANCH_NAME = "DataLink.Branch"
+local DATALINK_VERSION_NAME = "DataLink.Version"
+local DATALINK_VERBOSE_LOGGING_NAME = "DataLink.VerboseLogging"
+
 local IS_SERVER = RunService:IsServer()
-local IS_DEBBUG_ENABLED = true
 
 -- // Modules
 local Signal = require(script.Modules.Imports.Signal)
@@ -17,6 +22,7 @@ local Promise = require(script.Modules.Imports.Promise)
 
 local DatalinkTypes = require(script.Types)
 local DatalinkCache = { }
+local DatalinkVariables = { }
 local DatalinkClasses = {
 	"Console", "Throttle", "Queue", "Https", "Session", "Profiler", "Controller"
 }
@@ -35,7 +41,7 @@ function DatalinkService:YieldUntilDataLinkIsAuthenticated()
 	callingSource = string.split(callingSource, ".")
 	callingSource = callingSource[#callingSource]
 
-	while not self.isAuthenticated do
+	while not DatalinkService.isAuthenticated do
 		timePassed += task.wait()
 
 		if not hasWarned and timePassed > TIME_BEFORE_YIELD_WARNING then
@@ -54,12 +60,12 @@ end
 	@return Promise
 ]=]
 function DatalinkService:FireCustomEvent(eventCategory, ...)
-	self:YieldUntilDataLinkIsAuthenticated()
+	DatalinkService:YieldUntilDataLinkIsAuthenticated()
 
 	local eventParameters = { ... }
 	return Promise.new(function(promiseObject)
-		local success, response = self.Https.RequestAsync(
-			self.Constants.Enums.Endpoint.Publish, {
+		local success, response = DatalinkService.Https.RequestAsync(
+			DatalinkService.Constants.Enums.Endpoint.Publish, {
 				ServerID = (game.JobId ~= "" and game.JobId) or "0000000000000000",
 				DateISO = ISODate.new(),
 				PlaceID = game.PlaceId,
@@ -70,7 +76,7 @@ function DatalinkService:FireCustomEvent(eventCategory, ...)
 			}
 		)
 
-		self.Console:Log("FireCustomEvent :", eventCategory, "[", response, "]")
+		DatalinkService.Console:Log("FireCustomEvent :", eventCategory, "[", response, "]")
 
 		if success then
 			return promiseObject:Resolve()
@@ -89,24 +95,24 @@ end
 	@return Promise
 ]=]
 function DatalinkService:FireLogEvent(logLevel, message, trace)
-	self:YieldUntilDataLinkIsAuthenticated()
+	DatalinkService:YieldUntilDataLinkIsAuthenticated()
 
-	if not IS_DEBBUG_ENABLED and IS_SERVER then
+	if not DatalinkService:GetVariable(DATALINK_DEBUG_NAME) and IS_SERVER then
 		return
 	end
 
 	assert(logLevel.EnumType == Enum.AnalyticsLogLevel, "Expected Enum.AnalyticsLogLevel, got " .. type(logLevel))
 
 	return Promise.new(function(promiseObject)
-		local success, response = self.Https.RequestAsync(
-			self.Constants.Enums.Endpoint.Log, {
+		local success, response = DatalinkService.Https.RequestAsync(
+			DatalinkService.Constants.Enums.Endpoint.Log, {
 				message = message,
 				trace = trace,
 				type = logLevel.Name
 			}
 		)
 
-		self.Console:Log("FireLogEvent [", response, "]")
+		DatalinkService.Console:Log("FireLogEvent [", response, "]")
 
 		if success then
 			return promiseObject:Resolve()
@@ -124,16 +130,16 @@ end
 	@return Promise
 ]=]
 function DatalinkService:FireInternalEvent(internalEnum, body)
-	self:YieldUntilDataLinkIsAuthenticated()
+	DatalinkService:YieldUntilDataLinkIsAuthenticated()
 
-	if not IS_DEBBUG_ENABLED and IS_SERVER then
+	if not DatalinkService:GetVariable(DATALINK_DEBUG_NAME) and IS_SERVER then
 		return
 	end
 
 	return Promise.new(function(promiseObject)
-		local success, response = self.Https.RequestAsync(internalEnum, body)
+		local success, response = DatalinkService.Https.RequestAsync(internalEnum, body)
 
-		self.Console:Log("FireInternalEvent :", internalEnum, "[", response, "]")
+		DatalinkService.Console:Log("FireInternalEvent :", internalEnum, "[", response, "]")
 
 		if success then
 			return promiseObject:Resolve()
@@ -151,7 +157,7 @@ end
 	@param ... any
 	@return Promise
 ]=]
-function DatalinkService:FireEconomyEvent(player, economyAction, ...)
+function DatalinkService:FireEconomyEvent(economyAction, ...)
 	
 end
 
@@ -164,7 +170,7 @@ end
 	@param ... any
 	@return Promise
 ]=]
-function DatalinkService:FireProgressionEvent(player, category, progressionStatus, ...)
+function DatalinkService:FireProgressionEvent(category, progressionStatus, ...)
 	
 end
 
@@ -177,13 +183,13 @@ end
 ]=]
 function DatalinkService:GetFastInt(featureName, default)
 	return Promise.new(function(promiseObject)
-		local success, response = self.Https.RequestAsync(
-			self.Constants.Enums.Endpoint.FlagFetch, {
+		local success, response = DatalinkService.Https.RequestAsync(
+			DatalinkService.Constants.Enums.Endpoint.FlagFetch, {
 				name = featureName
 			}
 		)
 
-		self.Console:Log("GetFastInt :", featureName, "[", response, "]")
+		DatalinkService.Console:Log("GetFastInt :", featureName, "[", response, "]")
 
 		promiseObject:Resolve((success and response) or default, success, response)
 	end)():Await()
@@ -200,7 +206,7 @@ function DatalinkService:GetFastFlag(featureName, ignoreCache)
 		return DatalinkCache[featureName]
 	end
 
-	local featureInt = self:GetFastInt(featureName, 1)
+	local featureInt = DatalinkService:GetFastInt(featureName, 1)
 	local uniqueValue = 0
 
 	for _, byteValue in { string.byte(game.JobId, 1, #game.JobId) } do
@@ -215,23 +221,52 @@ function DatalinkService:GetFastFlag(featureName, ignoreCache)
 end
 
 --[=[
+	Set the state of verbose logging
+
+	@param state boolean
+]=]
+function DatalinkService:SetVerboseLogging(state)
+	DatalinkService:SetVariable(DATALINK_VERBOSE_LOGGING_NAME, state)
+end
+
+--[=[
+	Set a DataLink Variable, mostly used for internal management, but can be taken advantage of from foreign systems
+
+	@param name string
+	@param value any
+]=]
+function DatalinkService:SetVariable(name, value)
+	DatalinkVariables[name] = value
+end
+
+--[=[
+	Get a DataLink Variable, mostly used for internal management, but can be taken advantage of from foreign systems
+
+	@param name string
+	@param value any
+]=]
+function DatalinkService:GetVariable(name)
+	return DatalinkVariables[name]
+end
+
+--[=[
 	Initialization function for the DatalinkService
 
 	@param developerId string -- Your DeveloperID
 	@param developerKey string -- Your DeveloperKey
 ]=]
 function DatalinkService:Initialize(developerId, developerKey)
-	assert(not self.isAuthenticated, self.Constants.Errors.Initialized)
+	assert(not DatalinkService.isAuthenticated, DatalinkService.Constants.Errors.Initialized)
 
-	self.developerKey = developerKey
-	self.developerId = developerId
+	DatalinkService.developerKey = developerKey
+	DatalinkService.developerId = developerId
 
 	for _, className in DatalinkClasses do
-		self[className].init(self)
+		DatalinkService[className].init(DatalinkService)
 	end
 
-	self.Https.Authenticate()
-	self.isAuthenticated = true
+	DatalinkService.Https.Authenticate()
+	DatalinkService.isAuthenticated = true
 end
 
 --[=[
@@ -256,33 +291,37 @@ end
 	@within DatalinkService
 ]=]
 function DatalinkService.new()
-	local self = setmetatable({ }, { __index = DatalinkService })
 	local serviceProxy = newproxy(true)
 	local serviceMetatable = getmetatable(serviceProxy)
 
-	self.isAuthenticated = false
+	DatalinkService.isAuthenticated = false
 
-	self.onAuthenticated = Signal.new()
-	self.onRequestFailed = Signal.new()
-	self.onRequestSuccess = Signal.new()
+	DatalinkService.onAuthenticated = Signal.new()
+	DatalinkService.onRequestFailed = Signal.new()
+	DatalinkService.onRequestSuccess = Signal.new()
 
-	self.Constants = require(script.Modules.Constants)
-	self.Console = require(script.Modules.Console)
-	self.Throttle = require(script.Modules.Throttle)
-	self.Queue = require(script.Modules.Queue)
-	self.Https = require(script.Modules.Https)
-	self.Session = require(script.Modules.Session)
-	self.Profiler = require(script.Modules.Profiler)
+	DatalinkService.Constants = require(script.Modules.Constants)
+	DatalinkService.Console = require(script.Modules.Console)
+	DatalinkService.Throttle = require(script.Modules.Throttle)
+	DatalinkService.Queue = require(script.Modules.Queue)
+	DatalinkService.Https = require(script.Modules.Https)
+	DatalinkService.Session = require(script.Modules.Session)
+	DatalinkService.Profiler = require(script.Modules.Profiler)
 
-	self.Controller = require(script.Controller)
+	DatalinkService.Controller = require(script.Controller)
 
-	serviceMetatable.__index = self
-	serviceMetatable.__newindex = self
+	DatalinkService:SetVariable(DATALINK_DEBUG_NAME, true)
+	DatalinkService:SetVariable(DATALINK_BRANCH_NAME, "Stable")
+	DatalinkService:SetVariable(DATALINK_VERSION_NAME, "0.5")
+	DatalinkService:SetVariable(DATALINK_VERBOSE_LOGGING_NAME, true)
+
+	serviceMetatable.__index = DatalinkService
+	serviceMetatable.__newindex = DatalinkService
 	function serviceMetatable.__tostring()
 		return "DatalinkService"
 	end
 
-	return self -- serviceProxy
+	return serviceProxy
 end
 
 return DatalinkService.new()
