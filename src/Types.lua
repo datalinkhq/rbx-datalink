@@ -1,4 +1,4 @@
---!nocheck 
+--!nocheck
 
 export type PromiseClass = {
 	Get: () -> ... any,
@@ -42,6 +42,7 @@ export type DataLinkClass = {
 
 	YieldUntilDataLinkIsAuthenticated: () -> nil,
 
+    Initialize: (developerId: number, developerKey: string) -> nil
 	FireCustomEvent: (eventCategory: string, ... any) -> PromiseClass,
 	FireLogEvent: (logLevel: Enum, message: string, ... any) -> PromiseClass,
 	FireEconomyEvent: (player: Player, economyAction: Enum, ... any) -> PromiseClass,

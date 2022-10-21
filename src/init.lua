@@ -62,6 +62,7 @@ end
 function DatalinkService:FireCustomEvent(eventCategory, ...)
 	DatalinkService:YieldUntilDataLinkIsAuthenticated()
 
+
 	local eventParameters = { ... }
 	return Promise.new(function(promiseObject)
 		local success, response = DatalinkService.Https.RequestAsync(
@@ -158,7 +159,7 @@ end
 	@return Promise
 ]=]
 function DatalinkService:FireEconomyEvent(economyAction, ...)
-	
+
 end
 
 --[=[
@@ -171,7 +172,7 @@ end
 	@return Promise
 ]=]
 function DatalinkService:FireProgressionEvent(category, progressionStatus, ...)
-	
+
 end
 
 --[=[
