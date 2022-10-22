@@ -37,7 +37,7 @@ interface DatalinkClass {
     GetFastFlag(featureName: string, ignoreCache?: boolean): PromiseClass;
     SetVerboseLogging(state: boolean): void;
     SetVariable(name: string, value: any): void;
-    GetVariable(name: string): void;
+    GetVariable(name: string): any;
     FireEconomyEvent(player: Players, economyAction: EnumItem, ...other: any): PromiseClass;
     FireProgressionEvent(player: Players, category: string, progressionStatus: EnumItem, ...other: any): PromiseClass;
 }
