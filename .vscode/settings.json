@@ -16,5 +16,8 @@
 		"Metatable",
 		"Roact",
 		"newproxy"
+	],
+	"robloxLsp.diagnostics.disable": [
+		"undefined-type"
 	]
 }

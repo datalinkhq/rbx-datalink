@@ -1,4 +1,3 @@
-import SinglePlayer = Enum.DialogBehaviorType.SinglePlayer;
 import Players = Enum.HttpRequestType.Players;
 
 interface PromiseClass {
@@ -7,12 +6,12 @@ interface PromiseClass {
     Retry(): any;
     Await(): any;
 
-    Resolve(value: any);
-    Reject(value: any);
+    Resolve(value: any): void;
+    Reject(value: any): void;
 
     Callback(Promise: PromiseClass, Run: () => {}): any;
-    Finally(Callback): PromiseClass;
-    Then(Callback): PromiseClass;
+    Finally(arg0: Callback): PromiseClass;
+    Then(arg0: Callback): PromiseClass;
 }
 
 interface AuthenticatorClass {
@@ -22,21 +21,27 @@ interface AuthenticatorClass {
     constructor(id: number, key: string): AuthenticatorClass;
 }
 
-interface DataLinkClass {
+interface DatalinkClass {
+    new(): void;
     Authenticator: AuthenticatorClass;
     isAuthenticated: boolean;
     onAuthenticated: RBXScriptSignal;
     onRequestFailed: RBXScriptSignal;
     onRequestSuccess: RBXScriptSignal;
 
-    Initialize(developerId, developerKey): void
+    Initialize(developerId: number, developerKey: string): void
     YieldUntilDataLinkIsAuthenticated(): void;
-    FireCustomEvent(eventCategory: string, ...details: any): PromiseClass;
+    FireCustomEvent(eventCategory: string, ...data: any): PromiseClass;
     FireLogEvent(logLevel: EnumItem, message: string, ...other: any): PromiseClass;
+    GetFastInt(featureName: string, def?: number): PromiseClass;
+    GetFastFlag(featureName: string, ignoreCache?: boolean): PromiseClass;
+    SetVerboseLogging(state: boolean): void;
+    SetVariable(name: string, value: any): void;
+    GetVariable(name: string): void;
     FireEconomyEvent(player: Players, economyAction: EnumItem, ...other: any): PromiseClass;
     FireProgressionEvent(player: Players, category: string, progressionStatus: EnumItem, ...other: any): PromiseClass;
 }
 
 
-declare const Datalink: DataLinkClass
+declare const Datalink: DatalinkClass
 export = Datalink

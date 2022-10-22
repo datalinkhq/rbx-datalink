@@ -20,7 +20,7 @@ local Signal = require(script.Modules.Imports.Signal)
 local ISODate = require(script.Modules.Imports.ISODate)
 local Promise = require(script.Modules.Imports.Promise)
 
-local DatalinkTypes = require(script.Types)
+local DatalinkTypes = require(script.Parent.Types)
 local DatalinkCache = { }
 local DatalinkVariables = { }
 local DatalinkClasses = {
@@ -28,7 +28,7 @@ local DatalinkClasses = {
 }
 
 -- // Variables
-local DatalinkService: DatalinkTypes.DataLinkClass = { }
+local DatalinkService: DatalinkTypes.DatalinkClass = { }
 
 -- // Functions
 --[=[

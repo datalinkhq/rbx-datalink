@@ -31,7 +31,7 @@ export type AuthenticatorClass = {
 	new: (id: number, key: string) -> AuthenticatorClass
 }
 
-export type DataLinkClass = {
+export type DatalinkClass = {
 	Authenticator: AuthenticatorClass,
 
 	isAuthenticated: boolean,
@@ -42,9 +42,14 @@ export type DataLinkClass = {
 
 	YieldUntilDataLinkIsAuthenticated: () -> nil,
 
-    Initialize: (developerId: number, developerKey: string) -> nil
+    Initialize: (developerId: number, developerKey: string) -> nil,
 	FireCustomEvent: (eventCategory: string, ... any) -> PromiseClass,
 	FireLogEvent: (logLevel: Enum, message: string, ... any) -> PromiseClass,
+	GetFastInt: (featureName: string, default: number) -> PromiseClass,
+	GetFastFlag: (featureName: string, ignoreCache: boolean) -> PromiseClass,
+	SetVerboseLogging: (state: boolean) -> nil,
+	SetVariable: (name: string, value: any) -> nil,
+	GetVariable: (name: string) -> nil,
 	FireEconomyEvent: (player: Player, economyAction: Enum, ... any) -> PromiseClass,
 	FireProgressionEvent: (player: Player, category: string, progressionStatus: Enum, ... any) -> PromiseClass
 }

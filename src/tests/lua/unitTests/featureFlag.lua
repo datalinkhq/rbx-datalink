@@ -10,7 +10,7 @@ local fastFlagTest = { }
 
 function fastFlagTest.run()
 	for _, flagName in FAST_FLAGS do
-		print(flagName, DatalinkService:GetFastFlag(flagName))
+	    print(string.format("Fetching %s", flagName), DatalinkService:GetFastFlag(flagName))
 	end
 
 	return true
