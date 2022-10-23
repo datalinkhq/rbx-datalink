@@ -1,4 +1,16 @@
+# Dependencies & Build Output
 /node_modules
 /out
 /include
 *.tsbuildinfo
+
+# Roblox File Types
+*.rbxm
+*.rbxlx
+
+# Archives
+*.tar.gz
+*.tgz
+
+# Logs
+*.log
