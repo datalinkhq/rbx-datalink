@@ -1,10 +1,9 @@
 on:
   push:
-    # Sequence of patterns matched against refs/tags
     tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+      - '*'
 
-name: Create Release
+name: Build & Release
 
 jobs:
   build:
@@ -13,17 +12,23 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+      - name: Compile TypeScript SDK
+        run: pnpm build && pnpm pack && mv *.tgz rbx-datalink-sdk-v${{ github.ref }}_ts.tar.gz
+      - name: Post-Compilation cleanup
+        run: rm -rf out/*.d.ts out/*.ts out/*.tsbuildinfo out/tests
+      - name: Build Binary
+        uses: CompeyDev/rojo-build-action@0.1.5
         with:
-          tag_name: v${{ github.ref }}
-          release_name: Release v${{ github.ref }}
-          body: |
-            Changes in this Release
-            - First Change
-            - Second Change
-          draft: false
-          prerelease: true
+          output: rbx-datalink-sdk-v${{ github.ref }}
+          type: rbxm
+      - name: Create Release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: ${{ github.ref }}
+          prerelease: false
+          draft: true
+          title: v${{ github.ref }}
+          files: |
+            *.rbxm
+            rbx-datalink-sdk-v${{ github.ref }}_ts.tar.gz
