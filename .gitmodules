@@ -1,0 +1,12 @@
+[submodule "submodules/Janitor"]
+	path = submodules/Janitor
+	url = git@github.com:howmanysmall/Janitor.git
+[submodule "submodules/Sift"]
+	path = submodules/Sift
+	url = git@github.com:csqrl/sift.git
+[submodule "submodules/Promise"]
+	path = submodules/Promise
+	url = git@github.com:evaera/roblox-lua-promise.git
+[submodule "submodules/TestEZ"]
+	path = submodules/TestEZ
+	url = git@github.com:Roblox/testez.git

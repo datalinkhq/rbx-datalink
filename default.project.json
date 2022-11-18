@@ -3,7 +3,41 @@
 	"tree": {
 		"$className": "DataModel",
 
-		"ServerStorage": { "$className": "ServerStorage", "DatalinkService": { "$path": "out" }  },
-		"ServerScriptService": { "$className": "ServerScriptService", "DataLink-Tests": { "$path": "tests" } }
+		"HttpService": {
+			"$className": "HttpService",
+			"$properties": { "HttpEnabled": true }
+		},
+
+		"ServerStorage": {
+			"$className": "ServerStorage",
+			
+			"DatalinkSDK": {
+				"$path": "source",
+				"$ignoreUnknownInstances": true,
+
+				"Submodules": {
+					"$className": "Folder",
+
+					"Janitor": { "$path": "submodules/Janitor" },
+					"Promise": { "$path": "submodules/Promise" },
+					"Sift": { "$path": "submodules/Sift" }
+				}
+			}
+		},
+
+		"ServerScriptService": {
+			"$className": "ServerScriptService",
+			
+			"DatalinkSDK-Tests": { 
+				"$path": "tests",
+				"$ignoreUnknownInstances": true,
+
+				"Submodules": {
+					"$className": "Folder",
+
+					"TestEZ": { "$path": "submodules/TestEZ" }
+				}
+			}
+		}
 	}
 }

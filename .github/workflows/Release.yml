@@ -1,0 +1,34 @@
+on:
+	push:
+		tags:
+			- '*'
+
+name: Build & Release
+
+jobs:
+	build:
+		name: Create Release
+		runs-on: ubuntu-latest
+		steps:
+			- name: Checkout code
+				uses: actions/checkout@v2
+			- name: Compile TypeScript SDK
+				run: pnpm build && pnpm pack && mv *.tgz rbx-datalink-sdk-v${{ github.ref }}_ts.tar.gz
+			- name: Post-Compilation cleanup
+				run: rm -rf out/*.d.ts out/*.ts out/*.tsbuildinfo out/tests
+			- name: Build Binary
+				uses: CompeyDev/rojo-build-action@0.1.5
+				with:
+					output: rbx-datalink-sdk-v${{ github.ref }}
+					type: rbxm
+			- name: Create Release
+				uses: "marvinpinto/action-automatic-releases@latest"
+				with:
+					repo_token: "${{ secrets.GITHUB_TOKEN }}"
+					automatic_release_tag: ${{ github.ref }}
+					prerelease: false
+					draft: true
+					title: v${{ github.ref }}
+					files: |
+						*.rbxm
+						rbx-datalink-sdk-v${{ github.ref }}_ts.tar.gz

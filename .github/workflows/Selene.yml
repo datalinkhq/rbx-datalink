@@ -1,0 +1,23 @@
+name: Selene Linter
+
+on:
+	push:
+		branches: [ "master", "development" ]
+	pull_request:
+		branches: [ "master", "development" ]
+
+jobs:
+	generate:
+		runs-on: ubuntu-latest
+		steps:
+		- uses: actions/checkout@v1
+		- uses: Roblox/setup-foreman@v1
+			with:
+				version: "^1.0.0"
+				token: ${{ secrets.GITHUB_TOKEN }}
+		- name: Generate Standard Library
+			run: selene generate-roblox-std
+		- name: Remove Submodules
+			run: rm -r Source/Submodules
+		- name: Run Selene
+			run: selene .
