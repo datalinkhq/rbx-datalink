@@ -3,7 +3,7 @@
 	"tree": {
 		"$className": "DataModel",
 
-		"ServerStorage": { "$className": "ServerStorage", "DatalinkService": { "$path": "out" }  },
+		"ServerStorage": { "$className": "ServerStorage", "DatalinkService": { "$path": "src" }  },
 		"ServerScriptService": { "$className": "ServerScriptService", "DataLink-Tests": { "$path": "tests" } }
 	}
 }
