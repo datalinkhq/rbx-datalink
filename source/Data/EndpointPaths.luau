@@ -12,5 +12,5 @@ return table.freeze({
 	[EndpointType.PlayerJoined] = "/internal/playerJoined",
 	[EndpointType.PlayerRemoving] = "/internal/playerLeft",
 	[EndpointType.ServerTerminated] = "/internal/serverTerminated",
-	[EndpointType.FetchFlag] = "/ff/fetch"
+	[EndpointType.FetchFlagInt] = "/ff/fetch"
 })

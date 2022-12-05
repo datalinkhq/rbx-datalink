@@ -12,5 +12,5 @@ return table.freeze({
 	[EndpointType.PlayerJoined] = "POST",
 	[EndpointType.PlayerRemoving] = "POST",
 	[EndpointType.ServerTerminated] = "POST",
-	[EndpointType.FetchFlag] = "POST"
+	[EndpointType.FetchFlagInt] = "POST"
 })
