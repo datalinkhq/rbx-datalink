@@ -12,5 +12,8 @@
 *.tar.gz
 *.tgz
 
+# Environment
+.env
+
 # Logs
 *.log
