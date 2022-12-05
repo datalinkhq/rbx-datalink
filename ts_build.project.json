@@ -1,0 +1,29 @@
+{
+	"name": "DataLink-SDK",
+	"tree": {
+		"$className": "DataModel",
+
+		"HttpService": {
+			"$className": "HttpService",
+			"$properties": { "HttpEnabled": true }
+		},
+
+		"ServerStorage": {
+			"$className": "ServerStorage",
+			
+			"DatalinkSDK": {
+				"$path": "source",
+				"$ignoreUnknownInstances": true,
+
+				"Submodules": {
+					"$className": "Folder",
+
+					"Janitor": { "$path": "submodules/Janitor" },
+					"Promise": { "$path": "submodules/Promise" },
+					"Signal": { "$path": "submodules/Signal" },
+					"Sift": { "$path": "submodules/Sift" }
+				}
+			}
+		}
+	}
+}
