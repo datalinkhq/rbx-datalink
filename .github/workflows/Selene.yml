@@ -1,17 +1,18 @@
 name: Selene Linter
 
 on:
-	push:
-		branches: [ "master", "development" ]
 	pull_request:
+	push:
 		branches: [ "master", "development" ]
 
 jobs:
-	generate:
+	lint:
 		runs-on: ubuntu-latest
 		steps:
-		- uses: actions/checkout@v1
-		- uses: Roblox/setup-foreman@v1
+		- name: "Checkout code"
+		  uses: actions/checkout@v1	  
+		- name: "Setup Foreman toolchain"
+		  uses: Roblox/setup-foreman@v1
 			with:
 				version: "^1.0.0"
 				token: ${{ secrets.GITHUB_TOKEN }}
