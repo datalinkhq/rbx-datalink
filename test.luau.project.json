@@ -12,7 +12,7 @@
 			"$className": "ServerStorage",
 			
 			"DatalinkSDK": {
-				"$path": "source",
+				"$path": "src",
 				"$ignoreUnknownInstances": true,
 
 				"Submodules": {
@@ -23,6 +23,19 @@
 					"Signal": { "$path": "submodules/Signal" },
 					"Sift": { "$path": "submodules/Sift" }
 				}
+			}
+		},
+
+		"ServerScriptService": {
+			"$className": "ServerScriptService",
+			
+			"DatalinkSDK-Submodules": {
+				"$className": "Folder",
+
+				"TestEZ": { "$path": "submodules/TestEZ" }
+			},
+			"DatalinkSDK-Tests": { 
+				"$path": "tests"
 			}
 		}
 	}
