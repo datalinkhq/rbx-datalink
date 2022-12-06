@@ -1,7 +1,7 @@
 local EndpointType = require(script.Parent.Parent.Enums.EndpointType)
 
 return table.freeze({
-	[EndpointType.Publish] = "/events/publish",
+	[EndpointType.PublishCustomEvent] = "/events/publish",
 	[EndpointType.Update] = "/events/update",
 
 	[EndpointType.Destroy] = "/destroy",

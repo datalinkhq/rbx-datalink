@@ -1,7 +1,7 @@
 local EndpointType = require(script.Parent.Parent.Enums.EndpointType)
 
 return table.freeze({
-	[EndpointType.Publish] = "POST",
+	[EndpointType.PublishCustomEvent] = "POST",
 	[EndpointType.Update] = "POST",
 
 	[EndpointType.Destroy] = "POST",
