@@ -1,5 +1,5 @@
 return table.freeze({
-	Publish = "Publish",
+	PublishCustomEvent = "PublishCustomEvent",
 	Update = "Update",
 
 	Destroy = "Destroy",

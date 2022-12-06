@@ -10,5 +10,13 @@ return table.freeze({
 	StatusCode = "StatusCode",
 	Status = "StatusMessage",
 
-	SessionKey = "session_key"
+	SessionKey = "session_key",
+
+	ServerId = "ServerID",
+	DateIso = "DateISO",
+	PlaceId = "PlaceID",
+	Packet = "Packet",
+
+	EventName = "EventName",
+	EventParameters = "EventParameters"
 })
