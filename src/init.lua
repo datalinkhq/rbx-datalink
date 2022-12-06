@@ -9,8 +9,8 @@ DatalinkSDK.Enums = script.Enums
 DatalinkSDK.Submodules = script.Submodules
 DatalinkSDK.Components = script.Components
 
-DatalinkSDK._version = "1.0.0"
-DatalinkSDK._branch = "Development"
+DatalinkSDK.Version = "1.0.0"
+DatalinkSDK.Branch = "Development"
 
 DatalinkSDK._meta = {
 	placeServerJobId = (game.JobId ~= "" and game.JobId) or "00000000-0000-0000-0000-000000000000",
@@ -193,7 +193,12 @@ function DatalinkSDK.new(datalinkSettings): Type.DatalinkInstance
 			datalinkUserToken = ""
 		}, datalinkSettings)),
 
-		onAuthenticated = Signal.new()
+		onAuthenticated = Signal.new(),
+		onThrottled = Signal.new(), -- TODO
+		onMessageRequestSent = Signal.new(), -- TODO
+		onMessageRequestFail = Signal.new(), -- TODO
+		onDaemonStarted = Signal.new(), -- TODO
+		onDaemonStopped = Signal.new(), -- TODO
 	}, {
 		__index = DatalinkSDK
 	})

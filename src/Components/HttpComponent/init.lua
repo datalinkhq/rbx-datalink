@@ -137,12 +137,12 @@ function HttpComponent:init(SDK)
 	ThrottleComponent = SDK:_getComponent("ThrottleComponent")
 	SchedulerComponent = SDK:_getComponent("SchedulerComponent")
 
-	self._isOfflineWebserver = SDK._branch == "Development"
+	self._isOfflineWebserver = SDK.Branch == "Development"
 
 	self:_addDefaultRequestHeader("Content-Type", "application/json; charset=utf-8")
 
-	self:_addDefaultRequestHeader("Datalink-Version", SDK._version)
-	self:_addDefaultRequestHeader("Datalink-Branch", SDK._branch)
+	self:_addDefaultRequestHeader("Datalink-Version", SDK.Version)
+	self:_addDefaultRequestHeader("Datalink-Branch", SDK.Branch)
 end
 
 return HttpComponent
