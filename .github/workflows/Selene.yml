@@ -1,10 +1,11 @@
 name: Selene Linter
 
 on:
-	pull_request:
-		branches: [ "master", "development" ]
-	push:
-		branches: [ "master", "development" ]
+  push:
+  pull_request:
+    branches:
+    - main
+    - development
 
 jobs:
 	lint:
