@@ -2,6 +2,7 @@ name: Selene Linter
 
 on:
 	pull_request:
+		branches: [ "master", "development" ]
 	push:
 		branches: [ "master", "development" ]
 
