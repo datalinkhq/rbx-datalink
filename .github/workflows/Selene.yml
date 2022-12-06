@@ -9,16 +9,16 @@ jobs:
 	lint:
 		runs-on: ubuntu-latest
 		steps:
-		- name: "Checkout code"
-		  uses: actions/checkout@v1	  
-		- name: "Setup Foreman toolchain"
+		- name: Checkout code
+		  uses: actions/checkout@v1
+		- name: Setup Foreman toolchain
 		  uses: Roblox/setup-foreman@v1
 			with:
 				version: "^1.0.0"
 				token: ${{ secrets.GITHUB_TOKEN }}
-		- name: Generate Standard Library
-			run: selene generate-roblox-std
 		- name: Remove Submodules
 			run: rm -r Source/Submodules
 		- name: Run Selene
-			run: selene .
+			run: |- 
+				selene .
+			 	selene generate-roblox-std
