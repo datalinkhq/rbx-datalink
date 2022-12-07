@@ -8,8 +8,6 @@ return function()
 	local Datalink
 
 	describe("Fetching experience flags", function()
-		FOCUS()
-
 		it("Should have no exceptions raised on construction of the Datalink Instance", function()
 			Datalink = DatalinkSDK.new({
 				datalinkUserAccountId = DATALINK_DEVELOPER_ACCOUNT_ID,

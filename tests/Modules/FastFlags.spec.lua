@@ -28,8 +28,6 @@ return function()
 		end)
 
 		it("Should retrieve all remote fast flags", function()
-			FIXME("Datalink Backend: Infinite Yield")
-
 			local success = Datalink:getAllFastFlagsAsync():await()
 
 			expect(success).to.equal(true)
