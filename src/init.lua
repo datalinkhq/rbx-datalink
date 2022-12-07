@@ -122,6 +122,8 @@ function DatalinkSDK:getAllFastFlagsAsync()
 	-- 	local HttpComponent = self:_getComponent("HttpComponent")
 	-- 	local success, response = HttpComponent:requestAsync(EndpointType.FetchFlagInt):await()
 
+	-- 	warn(success, response)
+
 	-- 	if not success then
 	-- 		reject(response)
 	-- 	end
@@ -142,7 +144,7 @@ function DatalinkSDK:getAllFastFlagsAsync()
 	-- end)
 end
 
-function DatalinkSDK:getFastFlagAsync(flagId)
+function DatalinkSDK:getFastFlagAsync()
 	
 end
 
@@ -179,6 +181,12 @@ end
 
 function DatalinkSDK:isAuthenticated()
 	return self.serverAuthenticationKey ~= nil
+end
+
+function DatalinkSDK:getPlayerHash(player)
+	local PlayerComponent = self:_getComponent("PlayerComponent")
+
+	return PlayerComponent._hashes[player]
 end
 
 function DatalinkSDK.new(datalinkSettings): Type.DatalinkInstance
