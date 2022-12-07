@@ -24,6 +24,7 @@ export type DatalinkInstance = {
 	setLocalVariable: (variableName: string, variableValue: any) -> nil,
 
 	setVerboseLogging: (state: boolean) -> nil,
+	getPlayerHash: (player: Player) -> string | nil,
 
 	-- SIGNALS
 	onAuthenticated: RBXScriptSignal,
