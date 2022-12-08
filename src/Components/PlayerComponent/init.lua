@@ -1,7 +1,6 @@
 local Players = game:GetService("Players")
 local LocalizationService = game:GetService("LocalizationService")
 local MarketplaceService = game:GetService("MarketplaceService")
-local RunService = game:GetService("RunService")
 local Chat = game:GetService("Chat")
 
 local CHAT_STRING_VERIFICATION = "42134"
