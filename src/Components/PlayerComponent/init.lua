@@ -66,22 +66,18 @@ function PlayerComponent:getPlayerHash(playerInstance)
 	return self._hashes[playerInstance]
 end
 
-function PlayerComponent:start()
-	if not RunService:IsRunning() then
-		return
-	end
-
+function PlayerComponent:start(SDK)
 	for _, playerInstance in Players:GetPlayers() do
 		task.spawn(self._onPlayerJoined, self, playerInstance)
 	end
 
-	Players.PlayerAdded:Connect(function(...)
+	SDK._connectionsJanitor:Add(Players.PlayerAdded:Connect(function(...)
 		self:_onPlayerJoined(...)
-	end)
+	end))
 
-	Players.PlayerRemoving:Connect(function(...)
+	SDK._connectionsJanitor:Add(Players.PlayerRemoving:Connect(function(...)
 		self:_onPlayerLeft(...)
-	end)
+	end))
 end
 
 function PlayerComponent:init(SDK)
