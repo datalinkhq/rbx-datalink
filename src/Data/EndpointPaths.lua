@@ -7,7 +7,8 @@ return table.freeze({
 	[EndpointType.Destroy] = "/destroy",
 	[EndpointType.Heartbeat] = "/heartbeat",
 	[EndpointType.Authenticate] = "/auth",
-	[EndpointType.Log] = "/logs/publish",
+	[EndpointType.PublishLog] = "/logs/publish",
+	[EndpointType.FetchLog] = "/logs/fetch",
 
 	[EndpointType.PlayerJoined] = "/internal/playerJoined",
 	[EndpointType.PlayerRemoving] = "/internal/playerLeft",

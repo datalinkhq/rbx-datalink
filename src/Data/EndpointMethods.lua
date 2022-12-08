@@ -7,7 +7,8 @@ return table.freeze({
 	[EndpointType.Destroy] = "POST",
 	[EndpointType.Heartbeat] = "POST",
 	[EndpointType.Authenticate] = "POST",
-	[EndpointType.Log] = "POST",
+	[EndpointType.PublishLog] = "POST",
+	[EndpointType.FetchLog] = "POST",
 
 	[EndpointType.PlayerJoined] = "POST",
 	[EndpointType.PlayerRemoving] = "POST",
