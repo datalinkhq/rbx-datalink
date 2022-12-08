@@ -11,6 +11,9 @@ export type DatalinkInstance = {
 	authenticateAsync: () -> Promise,
 	getFastFlagAsync: (flagId: string | number) -> boolean,
 	getFastIntAsync: (flagId: string | number) -> number,
+	fireCustomEvent: (eventCategory: string, eventParameters: { [string]: any }) -> Promise,
+	getGameLogAsync: (logId: number) -> Promise,
+	getAllGameLogsAsync: () -> Promise,
 	getAllFastFlagsAsync: () -> {
 		{
 			flagName: string,
