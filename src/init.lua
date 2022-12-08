@@ -1,4 +1,5 @@
 local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
 
 local DatalinkSDK = { }
 local DatalinkVariables = { }
@@ -21,6 +22,7 @@ local Type = require(script.Type)
 
 local Sift = require(DatalinkSDK.Submodules.Sift)
 local Promise = require(DatalinkSDK.Submodules.Promise)
+local Janitor = require(DatalinkSDK.Submodules.Janitor)
 local Signal = require(DatalinkSDK.Submodules.Signal)
 
 local EndpointType = require(DatalinkSDK.Enums.EndpointType)
@@ -179,6 +181,58 @@ function DatalinkSDK:authenticateAsync()
 	end)
 end
 
+function DatalinkSDK:getGameLogAsync(logId)
+	assert(type(logId) == "number", "Expected 'logId' as Number")
+
+	return Promise.new(function(resolve, reject)
+		local HttpComponent = self:_getComponent("HttpComponent")
+
+		local success, response = HttpComponent:requestAsync(EndpointType.FetchLog, {
+			[HttpsParameters.LogId] = logId,
+		}):await()
+
+		if not success then
+			reject(response)
+		end
+
+		local responseBody = response[HttpsParameters.Body]
+		local statusCode = response[HttpsParameters.StatusCode]
+		local statusMessage = HTTPExceptionCodes[statusCode] or response[HttpsParameters.Status]
+
+		if statusCode == 200 then
+			local bodyJSON = HttpService:JSONDecode(responseBody)
+
+			resolve(bodyJSON.logs[1])
+		else
+			reject(statusMessage)
+		end
+	end)
+end
+
+function DatalinkSDK:getAllGameLogsAsync()
+	return Promise.new(function(resolve, reject)
+		local HttpComponent = self:_getComponent("HttpComponent")
+
+		local success, response = HttpComponent:requestAsync(EndpointType.FetchLog):await()
+
+		if not success then
+			reject(response)
+		end
+
+		local responseBody = response[HttpsParameters.Body]
+		local statusCode = response[HttpsParameters.StatusCode]
+		local statusMessage = HTTPExceptionCodes[statusCode] or response[HttpsParameters.Status]
+
+		if statusCode == 200 then
+			local bodyJSON = HttpService:JSONDecode(responseBody)
+
+			resolve(bodyJSON.logs)
+		else
+			reject(statusMessage)
+		end
+	end)
+end
+
 function DatalinkSDK:isAuthenticated()
 	return self.serverAuthenticationKey ~= nil
 end
@@ -196,6 +250,7 @@ function DatalinkSDK.new(datalinkSettings): Type.DatalinkInstance
 
 	local self = setmetatable({
 		_components = { },
+		_connectionsJanitor = Janitor.new(),
 		_settings = table.freeze(Sift.Dictionary.mergeDeep({
 			datalinkUserAccountId = 0,
 			datalinkUserToken = ""
@@ -216,7 +271,12 @@ function DatalinkSDK.new(datalinkSettings): Type.DatalinkInstance
 	self:_invokeComponentMethod("init", self)
 	self:_invokeComponentMethod("start", self)
 
-	self:setVerboseLogging()
+	self:setLocalVariable("Internal.VerboseLoggingEnabled", false)
+	self:setLocalVariable("Internal.DebugEnabled", true)
+
+	if not RunService:IsRunning() then
+		self._connectionsJanitor:Cleanup()
+	end
 
 	table.freeze(self._components)
 
@@ -228,6 +288,7 @@ function DatalinkSDK.new(datalinkSettings): Type.DatalinkInstance
 	end
 
 	DatalinkInstance = self._proxy
+
 
 	return self._proxy :: typeof(self)
 end
