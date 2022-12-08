@@ -18,5 +18,9 @@ return table.freeze({
 	Packet = "Packet",
 
 	EventName = "EventName",
-	EventParameters = "EventParameters"
+	EventParameters = "EventParameters",
+
+	Trace = "trace",
+	Type = "type",
+	LogId = "logid"
 })

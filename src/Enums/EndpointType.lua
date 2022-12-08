@@ -5,7 +5,8 @@ return table.freeze({
 	Destroy = "Destroy",
 	Heartbeat = "Heartbeat",
 	Authenticate = "Authenticate",
-	Log = "Log",
+	PublishLog = "PublishLog",
+	FetchLog = "FetchLog",
 
 	PlayerJoined = "PlayerJoined",
 	PlayerRemoving = "PlayerRemoving",
