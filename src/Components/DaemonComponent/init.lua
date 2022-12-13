@@ -1,5 +1,6 @@
 local Sift
 
+local DaemonInitiatedSignal
 local DaemonComponent = {
 	_daemons = { }
 }
@@ -33,6 +34,8 @@ function DaemonComponent:resumeDaemon(daemonIndex, ...)
 end
 
 function DaemonComponent:addDaemon(daemonCallback, daemonIndex, daemonSerial)
+	DaemonInitiatedSignal:Fire(daemonIndex)
+
 	self._daemons[daemonIndex] = {
 		_serial = (daemonSerial == true and daemonSerial )or false,
 		_thread = task.spawn(function()
@@ -48,6 +51,8 @@ end
 
 function DaemonComponent:init(SDK)
 	Sift = require(SDK.Submodules.Sift)
+
+	DaemonInitiatedSignal = SDK.onDaemonInitiated
 end
 
 return DaemonComponent

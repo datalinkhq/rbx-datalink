@@ -261,8 +261,7 @@ function DatalinkSDK.new(datalinkSettings): Type.DatalinkInstance
 		onThrottled = Signal.new(),
 		onMessageRequestSent = Signal.new(),
 		onMessageRequestFail = Signal.new(),
-		onDaemonStarted = Signal.new(),
-		onDaemonStopped = Signal.new(),
+		onDaemonInitiated = Signal.new()
 	}, {
 		__index = DatalinkSDK
 	})
