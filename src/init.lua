@@ -259,8 +259,8 @@ function DatalinkSDK.new(datalinkSettings): Type.DatalinkInstance
 		onHeartbeat = Signal.new(),
 		onAuthenticated = Signal.new(),
 		onThrottled = Signal.new(),
-		onMessageRequestSent = Signal.new(), -- TODO
-		onMessageRequestFail = Signal.new(), -- TODO
+		onMessageRequestSent = Signal.new(),
+		onMessageRequestFail = Signal.new(),
 		onDaemonStarted = Signal.new(), -- TODO
 		onDaemonStopped = Signal.new(), -- TODO
 	}, {

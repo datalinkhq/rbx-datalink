@@ -12,6 +12,9 @@ local DatalinkSchema, SchemaType
 local EndpointPaths
 local EndpointMethods
 
+local MessageRequestSentSignal
+local MessageRequestFailSignal
+
 local SchedulerComponent
 local ThrottleComponent
 local HttpComponent = {
@@ -86,8 +89,6 @@ function HttpComponent:requestAsync(endpointType, requestBody, requestHeaders)
 		local userUniqueIdentifier = self._getUserUniqueIdentifier()
 
 		local success, response = SchedulerComponent:addTaskAsync(function()
-			
-
 			return HttpService:RequestAsync({
 				[HttpsParameters.Headers] = Sift.Dictionary.mergeDeep(self._defaultHeaders, requestHeaders),
 				[HttpsParameters.Url] = targetEndpointUrl,
@@ -102,8 +103,12 @@ function HttpComponent:requestAsync(endpointType, requestBody, requestHeaders)
 		ThrottleComponent:increment()
 
 		if success then
+			MessageRequestSentSignal:Fire(endpointType)
+
 			resolve(response)
 		else
+			MessageRequestSentSignal:Fire(response)
+
 			reject(response)
 		end
 	end)
@@ -135,6 +140,9 @@ function HttpComponent:init(SDK)
 
 	Promise = require(SDK.Submodules.Promise)
 	Sift = require(SDK.Submodules.Sift)
+
+	MessageRequestSentSignal = SDK.onMessageRequestSent
+	MessageRequestFailSignal = SDK.onMessageRequestFail
 
 	ThrottleComponent = SDK:_getComponent("ThrottleComponent")
 	SchedulerComponent = SDK:_getComponent("SchedulerComponent")
