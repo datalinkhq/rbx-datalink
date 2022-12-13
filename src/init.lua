@@ -243,6 +243,41 @@ function DatalinkSDK:getPlayerHash(player)
 	return PlayerComponent._hashes[player]
 end
 
+function DatalinkSDK:destroy()
+	local DaemonComponent = self:_getComponent("DaemonComponent")
+
+	warn("Destroying..")
+
+	return Promise.new(function(resolve, reject)
+		local HttpComponent = self:_getComponent("HttpComponent")
+
+		local success, response = HttpComponent:requestPriorityAsync(EndpointType.Destroy, {
+			[HttpsParameters.SessionKey] = self.serverAuthenticationKey
+		}):await()
+
+		if not success then
+			reject(response)
+		end
+
+		local statusCode = response[HttpsParameters.StatusCode]
+		local statusMessage = HTTPExceptionCodes[statusCode] or response[HttpsParameters.Status]
+
+		if statusCode == 200 then
+			resolve()
+		else
+			reject(statusMessage)
+		end
+	end):andThen(function()
+		self._destroyed = true
+		self._connectionsJanitor:Cleanup()
+		self.onDestroyed:Fire()
+
+		warn("Destroyed!")
+
+		DaemonComponent:killDaemons()
+	end)
+end
+
 function DatalinkSDK.new(datalinkSettings): Type.DatalinkInstance
 	if DatalinkInstance then
 		return DatalinkInstance
@@ -253,10 +288,12 @@ function DatalinkSDK.new(datalinkSettings): Type.DatalinkInstance
 		_connectionsJanitor = Janitor.new(),
 		_settings = table.freeze(Sift.Dictionary.mergeDeep({
 			datalinkUserAccountId = 0,
-			datalinkUserToken = ""
+			datalinkUserToken = "",
+			branchType = "Production"
 		}, datalinkSettings)),
 
 		onAuthenticated = Signal.new(),
+		onDestroyed = Signal.new(),
 		onThrottled = Signal.new(), -- TODO
 		onMessageRequestSent = Signal.new(), -- TODO
 		onMessageRequestFail = Signal.new(), -- TODO
@@ -274,7 +311,13 @@ function DatalinkSDK.new(datalinkSettings): Type.DatalinkInstance
 	self:setLocalVariable("Internal.VerboseLoggingEnabled", false)
 	self:setLocalVariable("Internal.DebugEnabled", true)
 
-	if not RunService:IsRunning() then
+	if RunService:IsRunning() then
+		game:BindToClose(function()
+			self:destroy()
+
+			self.onDestroyed:Wait()
+		end)
+	else
 		self._connectionsJanitor:Cleanup()
 	end
 
