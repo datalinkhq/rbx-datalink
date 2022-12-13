@@ -1,328 +1,296 @@
---[[
-	DatalinkService.lua
-]]
-
--- // Services
+local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
--- // Constants
-local TIME_BEFORE_YIELD_WARNING = 5
-
-local DATALINK_DEBUG_NAME = "DataLink.Debug"
-local DATALINK_BRANCH_NAME = "DataLink.Branch"
-local DATALINK_VERSION_NAME = "DataLink.Version"
-local DATALINK_VERBOSE_LOGGING_NAME = "DataLink.VerboseLogging"
-
-local IS_SERVER = RunService:IsServer()
-
--- // Modules
-local Signal = require(script.Modules.Imports.Signal)
-local ISODate = require(script.Modules.Imports.ISODate)
-local Promise = require(script.Modules.Imports.Promise)
-
-local DatalinkTypes = require(script.Parent.Types)
-local DatalinkCache = { }
+local DatalinkSDK = { }
 local DatalinkVariables = { }
-local DatalinkClasses = {
-	"Console", "Throttle", "Queue", "Https", "Session", "Profiler", "Controller"
+local DatalinkInstance
+
+DatalinkSDK.Data = script.Data
+DatalinkSDK.Enums = script.Enums
+DatalinkSDK.Submodules = script.Submodules
+DatalinkSDK.Components = script.Components
+
+DatalinkSDK.Version = "1.0.0"
+DatalinkSDK.Branch = "Development"
+
+DatalinkSDK._meta = {
+	placeServerJobId = (game.JobId ~= "" and game.JobId) or "00000000-0000-0000-0000-000000000000",
+	placeServerId = (game.PlaceId ~= 0 and game.PlaceId) or -1
 }
 
--- // Variables
-local DatalinkService: DatalinkTypes.DatalinkClass = { }
+local Type = require(script.Type)
 
--- // Functions
---[=[
-	Yields the active thread until DataLink is authenticated
-]=]
-function DatalinkService:YieldUntilDataLinkIsAuthenticated()
-	local timePassed, hasWarned = 0, false
-	local callingFunctionName, callingSource =  debug.info(2, "ns")
+local Sift = require(DatalinkSDK.Submodules.Sift)
+local Promise = require(DatalinkSDK.Submodules.Promise)
+local Janitor = require(DatalinkSDK.Submodules.Janitor)
+local Signal = require(DatalinkSDK.Submodules.Signal)
 
-	callingSource = string.split(callingSource, ".")
-	callingSource = callingSource[#callingSource]
+local EndpointType = require(DatalinkSDK.Enums.EndpointType)
+local HttpsParameters = require(DatalinkSDK.Enums.HttpsParameters)
+local HTTPExceptionCodes = require(DatalinkSDK.Data.HTTPExceptionCodes)
 
-	while not DatalinkService.isAuthenticated do
-		timePassed += task.wait()
+function DatalinkSDK:_getComponent(componentName)
+	for _, componentResolve in self._components do
+		if componentResolve.name ~= componentName then
+			continue
+		end
 
-		if not hasWarned and timePassed > TIME_BEFORE_YIELD_WARNING then
-			hasWarned = true
+		return componentResolve :: typeof(componentResolve)
+	end
+end
 
-			warn(string.format("Infinite yield possible on '%s.%s(...)'", callingSource, callingFunctionName))
+function DatalinkSDK:_invokeComponentMethod(method, ...)
+	for _, componentResolve in self._components do
+		if componentResolve[method] then
+			componentResolve[method](componentResolve, ...)
 		end
 	end
 end
 
---[=[
-	Fires a custom event with a custom event name and data
+function DatalinkSDK:_registerComponentModules()
+	for _, componentObject in self.Components:GetChildren() do
+		local componentResolve = require(componentObject)
 
-	@param eventCategory string
-	@param ... any
-	@return Promise
-]=]
-function DatalinkService:FireCustomEvent(eventCategory, ...)
-	DatalinkService:YieldUntilDataLinkIsAuthenticated()
+		table.insert(self._components, componentResolve)
 
+		if not componentResolve.name then
+			componentResolve.name = componentObject.Name
+		end
+	end
+end
 
-	local eventParameters = { ... }
-	return Promise.new(function(promiseObject)
-		local success, response = DatalinkService.Https.RequestAsync(
-			DatalinkService.Constants.Enums.Endpoint.Publish, {
-				ServerID = (game.JobId ~= "" and game.JobId) or "0000000000000000",
-				DateISO = ISODate.new(),
-				PlaceID = game.PlaceId,
-				Packet = {
-					EventName = eventCategory,
-					EventParams = eventParameters
-				}
+function DatalinkSDK:fireCustomEvent(eventCategory, eventParameters)
+	assert(eventCategory ~= nil, "Expected 'eventCategory' as String")
+	assert(eventParameters ~= nil, "Expected 'eventParameters' Dictionary")
+	assert(type(eventCategory) == "string", "Expected 'eventCategory' as String")
+	assert(type(eventParameters) == "table", "Expected 'eventParameters' as Dictionary")
+
+	local eventParametersAreArray = Sift.Array.is(eventParameters)
+
+	return Promise.new(function(resolve, reject)
+		local HttpComponent = self:_getComponent("HttpComponent")
+		local DateComponent = self:_getComponent("DateComponent")
+
+		warn(eventParametersAreArray)
+
+		if eventParametersAreArray then
+			error("Expected 'eventParameters' type 'Dictionary', got 'Array'")
+		end
+
+		local success, response = HttpComponent:requestAsync(EndpointType.PublishCustomEvent, {
+			[HttpsParameters.ServerId] = self._meta.placeServerJobId,
+			[HttpsParameters.PlaceId] = self._meta.placeServerId,
+			[HttpsParameters.DateIso] = DateComponent:fromNow(),
+			[HttpsParameters.Packet] = {
+				[HttpsParameters.EventName] = eventCategory,
+				[HttpsParameters.EventParameters] = eventParameters
 			}
-		)
+		}):await()
 
-		DatalinkService.Console:Log("FireCustomEvent :", eventCategory, "[", response, "]")
+		warn(success, response)
 
-		if success then
-			return promiseObject:Resolve()
-		else
-			return promiseObject:Reject(response)
+		if not success then
+			reject(response)
 		end
-	end)()
-end
 
---[=[
-	Fire a log event used to track errors and warnings experienced by players
+		local responseBody = response[HttpsParameters.Body]
+		local statusCode = response[HttpsParameters.StatusCode]
+		local statusMessage = HTTPExceptionCodes[statusCode] or response[HttpsParameters.Status]
 
-	@param logLevel Enum.AnalyticsLogLevel
-	@param message string
-	@param trace string
-	@return Promise
-]=]
-function DatalinkService:FireLogEvent(logLevel, message, trace)
-	DatalinkService:YieldUntilDataLinkIsAuthenticated()
+		if statusCode == 200 then
+			local bodyJSON = HttpService:JSONDecode(responseBody)
 
-	if not DatalinkService:GetVariable(DATALINK_DEBUG_NAME) and IS_SERVER then
-		return
-	end
-
-	assert(logLevel.EnumType == Enum.AnalyticsLogLevel, "Expected Enum.AnalyticsLogLevel, got " .. type(logLevel))
-
-	return Promise.new(function(promiseObject)
-		local success, response = DatalinkService.Https.RequestAsync(
-			DatalinkService.Constants.Enums.Endpoint.Log, {
-				message = message,
-				trace = trace,
-				type = logLevel.Name
-			}
-		)
-
-		DatalinkService.Console:Log("FireLogEvent [", response, "]")
-
-		if success then
-			return promiseObject:Resolve()
+			resolve(bodyJSON.EventID)
 		else
-			return promiseObject:Reject(response)
+			reject(statusMessage)
 		end
-	end)()
+	end)
 end
 
---[=[
-	API used to fire internal datalink events regarding game & player state
+function DatalinkSDK:fireEconomyEvent()
+	
+end
 
-	@param internalEnum string
-	@param ... any
-	@return Promise
-]=]
-function DatalinkService:FireInternalEvent(internalEnum, body)
-	DatalinkService:YieldUntilDataLinkIsAuthenticated()
+function DatalinkSDK:fireProgressionEvent()
+	
+end
 
-	if not DatalinkService:GetVariable(DATALINK_DEBUG_NAME) and IS_SERVER then
-		return
-	end
+function DatalinkSDK:getFastIntAsync()
+	
+end
 
-	return Promise.new(function(promiseObject)
-		local success, response = DatalinkService.Https.RequestAsync(internalEnum, body)
+function DatalinkSDK:getAllFastFlagsAsync()
+	-- return Promise.new(function(resolve, reject)
+	-- 	local HttpComponent = self:_getComponent("HttpComponent")
+	-- 	local success, response = HttpComponent:requestAsync(EndpointType.FetchFlagInt):await()
 
-		DatalinkService.Console:Log("FireInternalEvent :", internalEnum, "[", response, "]")
+	-- 	warn(success, response)
 
-		if success then
-			return promiseObject:Resolve()
+	-- 	if not success then
+	-- 		reject(response)
+	-- 	end
+
+	-- 	local responseBody = response[HttpsParameters.Body]
+	-- 	local statusCode = response[HttpsParameters.StatusCode]
+	-- 	local statusMessage = HTTPExceptionCodes[statusCode] or response[HttpsParameters.Status]
+
+	-- 	warn("AllFastFlags:", responseBody)
+
+	-- 	if statusCode == 200 then
+	-- 		local bodyJSON = HttpService:JSONDecode(responseBody)
+
+			
+	-- 	else
+	-- 		reject(statusMessage)
+	-- 	end
+	-- end)
+end
+
+function DatalinkSDK:getFastFlagAsync()
+	
+end
+
+function DatalinkSDK:setVerboseLogging(state)
+	self:setLocalVariable("Internal.VerboseLoggingEnabled", state)
+end
+
+function DatalinkSDK:setLocalVariable(variableName, variableValue)
+	DatalinkVariables[variableName] = variableValue
+end
+
+function DatalinkSDK:getLocalVariable(variableName)
+	return DatalinkVariables[variableName]
+end
+
+function DatalinkSDK:getLocalVariables()
+	return DatalinkVariables
+end
+
+function DatalinkSDK:authenticateAsync()
+	return Promise.new(function(resolve, reject)
+		local SessionComponent = self:_getComponent("SessionComponent")
+
+		SessionComponent:authenticateServerAsync():andThen(function()
+			self.onAuthenticated:Fire(self.serverAuthenticationKey)
+			SessionComponent:spawnHeartbeatDaemon()
+
+			resolve()
+		end):catch(function(...)
+			reject(...)
+		end)
+	end)
+end
+
+function DatalinkSDK:getGameLogAsync(logId)
+	assert(type(logId) == "number", "Expected 'logId' as Number")
+
+	return Promise.new(function(resolve, reject)
+		local HttpComponent = self:_getComponent("HttpComponent")
+
+		local success, response = HttpComponent:requestAsync(EndpointType.FetchLog, {
+			[HttpsParameters.LogId] = logId,
+		}):await()
+
+		if not success then
+			reject(response)
+		end
+
+		local responseBody = response[HttpsParameters.Body]
+		local statusCode = response[HttpsParameters.StatusCode]
+		local statusMessage = HTTPExceptionCodes[statusCode] or response[HttpsParameters.Status]
+
+		if statusCode == 200 then
+			local bodyJSON = HttpService:JSONDecode(responseBody)
+
+			resolve(bodyJSON.logs[1])
 		else
-			return promiseObject:Reject(response)
+			reject(statusMessage)
 		end
-	end)()
+	end)
 end
 
---[=[
-	Fire an event used to track player actions pertaining to the in-game economy
+function DatalinkSDK:getAllGameLogsAsync()
+	return Promise.new(function(resolve, reject)
+		local HttpComponent = self:_getComponent("HttpComponent")
 
-	@param player Player
-	@param economyAction Enum.AnalyticsEconomyAction
-	@param ... any
-	@return Promise
-]=]
-function DatalinkService:FireEconomyEvent(economyAction, ...)
+		local success, response = HttpComponent:requestAsync(EndpointType.FetchLog):await()
 
+		if not success then
+			reject(response)
+		end
+
+		local responseBody = response[HttpsParameters.Body]
+		local statusCode = response[HttpsParameters.StatusCode]
+		local statusMessage = HTTPExceptionCodes[statusCode] or response[HttpsParameters.Status]
+
+		if statusCode == 200 then
+			local bodyJSON = HttpService:JSONDecode(responseBody)
+
+			resolve(bodyJSON.logs)
+		else
+			reject(statusMessage)
+		end
+	end)
 end
 
---[=[
-	Fire an event used to track player progression through the game
-
-	@param player Player
-	@param category string
-	@param progressionStatus Enum.AnalyticsProgressionStatus
-	@param ... any
-	@return Promise
-]=]
-function DatalinkService:FireProgressionEvent(category, progressionStatus, ...)
-
+function DatalinkSDK:isAuthenticated()
+	return self.serverAuthenticationKey ~= nil
 end
 
---[=[
-	Returns a int defining the state of a fast flag
+function DatalinkSDK:getPlayerHash(player)
+	local PlayerComponent = self:_getComponent("PlayerComponent")
 
-	@param featureName string
-	@param default number
-	@return number
-]=]
-function DatalinkService:GetFastInt(featureName, default)
-	return Promise.new(function(promiseObject)
-		local success, response = DatalinkService.Https.RequestAsync(
-			DatalinkService.Constants.Enums.Endpoint.FlagFetch, {
-				name = featureName
-			}
-		)
-
-		DatalinkService.Console:Log("GetFastInt :", featureName, "[", response, "]")
-
-		promiseObject:Resolve((success and response) or default, success, response)
-	end)():Await()
+	return PlayerComponent._hashes[player]
 end
 
---[=[
-	Validate if a feature is enabled for this server
-
-	@param featureName string
-	@return boolean
-]=]
-function DatalinkService:GetFastFlag(featureName, ignoreCache)
-	if not ignoreCache and DatalinkCache[featureName] then
-		return DatalinkCache[featureName]
+function DatalinkSDK.new(datalinkSettings): Type.DatalinkInstance
+	if DatalinkInstance then
+		return DatalinkInstance
 	end
 
-	local featureInt = DatalinkService:GetFastInt(featureName, 1)
-	local uniqueValue = 0
+	local self = setmetatable({
+		_components = { },
+		_connectionsJanitor = Janitor.new(),
+		_settings = table.freeze(Sift.Dictionary.mergeDeep({
+			datalinkUserAccountId = 0,
+			datalinkUserToken = ""
+		}, datalinkSettings)),
 
-	for _, byteValue in { string.byte(game.JobId, 1, #game.JobId) } do
-		uniqueValue += byteValue
+		onHeartbeat = Signal.new(),
+		onAuthenticated = Signal.new(),
+		onThrottled = Signal.new(),
+		onMessageRequestSent = Signal.new(),
+		onMessageRequestFail = Signal.new(),
+		onDaemonInitiated = Signal.new()
+	}, {
+		__index = DatalinkSDK
+	})
+
+	self:_registerComponentModules()
+
+	self:_invokeComponentMethod("init", self)
+	self:_invokeComponentMethod("start", self)
+
+	self:setLocalVariable("Internal.VerboseLoggingEnabled", false)
+	self:setLocalVariable("Internal.DebugEnabled", true)
+
+	if not RunService:IsRunning() then
+		self._connectionsJanitor:Cleanup()
 	end
 
-	if featureInt == 0 then
-		return true
-	else
-		return uniqueValue % (1 / featureInt) ~= 0
-	end
-end
+	table.freeze(self._components)
 
---[=[
-	Set the state of verbose logging
+	self._proxy = newproxy(true)
+	self._object = self
 
-	@param state boolean
-]=]
-function DatalinkService:SetVerboseLogging(state)
-	DatalinkService:SetVariable(DATALINK_VERBOSE_LOGGING_NAME, state)
-end
-
---[=[
-	Set a DataLink Variable, mostly used for internal management, but can be taken advantage of from foreign systems
-
-	@param name string
-	@param value any
-]=]
-function DatalinkService:SetVariable(name, value)
-	DatalinkVariables[name] = value
-end
-
---[=[
-	Get a DataLink Variable, mostly used for internal management, but can be taken advantage of from foreign systems
-
-	@param name string
-	@param value any
-]=]
-function DatalinkService:GetVariable(name)
-	return DatalinkVariables[name]
-end
-
---[=[
-	Initialization function for the DatalinkService
-
-	@param developerId string -- Your DeveloperID
-	@param developerKey string -- Your DeveloperKey
-]=]
-function DatalinkService:Initialize(developerId, developerKey)
-	assert(not DatalinkService.isAuthenticated, DatalinkService.Constants.Errors.Initialized)
-
-	DatalinkService.developerKey = developerKey
-	DatalinkService.developerId = developerId
-
-	for _, className in DatalinkClasses do
-		DatalinkService[className].init(DatalinkService)
+	getmetatable(self._proxy).__index = function(_, key)
+		return self[key]
 	end
 
-	DatalinkService.Https.Authenticate()
-	DatalinkService.isAuthenticated = true
+	DatalinkInstance = self._proxy
+
+
+	return self._proxy :: typeof(self)
 end
 
---[=[
-	@class DatalinkService
-
-	DatalinkService
-]=]
---[=[
-	@prop isAuthenticated boolean
-	@within DatalinkService
-]=]
---[=[
-	@prop onAuthenticated RBXScriptSignal
-	@within DatalinkService
-]=]
---[=[
-	@prop onRequestFailed RBXScriptSignal
-	@within DatalinkService
-]=]
---[=[
-	@prop onRequestSuccess RBXScriptSignal
-	@within DatalinkService
-]=]
-function DatalinkService.new()
-	local serviceProxy = newproxy(true)
-	local serviceMetatable = getmetatable(serviceProxy)
-
-	DatalinkService.isAuthenticated = false
-
-	DatalinkService.onAuthenticated = Signal.new()
-	DatalinkService.onRequestFailed = Signal.new()
-	DatalinkService.onRequestSuccess = Signal.new()
-
-	DatalinkService.Constants = require(script.Modules.Constants)
-	DatalinkService.Console = require(script.Modules.Console)
-	DatalinkService.Throttle = require(script.Modules.Throttle)
-	DatalinkService.Queue = require(script.Modules.Queue)
-	DatalinkService.Https = require(script.Modules.Https)
-	DatalinkService.Session = require(script.Modules.Session)
-	DatalinkService.Profiler = require(script.Modules.Profiler)
-
-	DatalinkService.Controller = require(script.Controller)
-
-	DatalinkService:SetVariable(DATALINK_DEBUG_NAME, true)
-	DatalinkService:SetVariable(DATALINK_BRANCH_NAME, "Stable")
-	DatalinkService:SetVariable(DATALINK_VERSION_NAME, "0.5")
-	DatalinkService:SetVariable(DATALINK_VERBOSE_LOGGING_NAME, true)
-
-	serviceMetatable.__index = DatalinkService
-	serviceMetatable.__newindex = DatalinkService
-	function serviceMetatable.__tostring()
-		return "DatalinkService"
-	end
-
-	return serviceProxy
-end
-
-return DatalinkService.new()
+return DatalinkSDK :: Type.DatalinkSDK

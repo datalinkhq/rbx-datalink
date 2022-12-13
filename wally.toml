@@ -1,9 +1,9 @@
 [package]
 name = "datalinkhq/rbx-datalink"
-description = "A futuristic and lightweight analytics platform for upcoming ROBLOX games. Learn more at https://datalink.dev."
+description = "DatalinkSDK - Wrapper for the Datalink Analytics Platform"
 authors = ["AsyncMatrix <catbob614@gmail.com>", "DevComp <hi@devcomp.xyz>"]
 
-version = "2.0.1"
+version = "1.0.0"
 license = "MIT"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
