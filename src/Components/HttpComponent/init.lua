@@ -48,15 +48,19 @@ function HttpComponent:requestPriorityAsync(endpointType, requestBody, requestHe
 		local serverAuthenticationKey = self._getServerAuthenticationKey()
 		local userAuthenticationKey = self._getUserAuthenticationKey()
 		local userUniqueIdentifier = self._getUserUniqueIdentifier()
+		local sdkBranch = self._getBranchType()
 
 		local success, response = SchedulerComponent:addTaskAsync(function()
 			return HttpService:RequestAsync({
 				[HttpsParameters.Headers] = Sift.Dictionary.mergeDeep(self._defaultHeaders, requestHeaders),
 				[HttpsParameters.Url] = targetEndpointUrl,
 				[HttpsParameters.Method] = targetMethod,
+				[HttpsParameters.BranchType] = sdkBranch,
 				[HttpsParameters.Body] = HttpService:JSONEncode(Sift.Dictionary.mergeDeep({
-					[HttpsParameters.Token] = serverAuthenticationKey or userAuthenticationKey,
-					[HttpsParameters.Id] = userUniqueIdentifier
+					[HttpsParameters.Id] = userUniqueIdentifier,
+					[HttpsParameters.Token] =
+						endpointType == endpointType.Destroy and userAuthenticationKey or
+						serverAuthenticationKey or userAuthenticationKey,
 				}, requestBody))
 			})
 		end, true):await()
@@ -84,12 +88,14 @@ function HttpComponent:requestAsync(endpointType, requestBody, requestHeaders)
 		local serverAuthenticationKey = self._getServerAuthenticationKey()
 		local userAuthenticationKey = self._getUserAuthenticationKey()
 		local userUniqueIdentifier = self._getUserUniqueIdentifier()
+		local sdkBranch = self._getBranchType()
 
 		local success, response = SchedulerComponent:addTaskAsync(function()
 			return HttpService:RequestAsync({
 				[HttpsParameters.Headers] = Sift.Dictionary.mergeDeep(self._defaultHeaders, requestHeaders),
 				[HttpsParameters.Url] = targetEndpointUrl,
 				[HttpsParameters.Method] = targetMethod,
+				[HttpsParameters.BranchType] = sdkBranch,
 				[HttpsParameters.Body] = HttpService:JSONEncode(Sift.Dictionary.mergeDeep({
 					[HttpsParameters.Token] = serverAuthenticationKey or userAuthenticationKey,
 					[HttpsParameters.Id] = userUniqueIdentifier
@@ -112,6 +118,10 @@ function HttpComponent:start(SDK)
 
 	function self._getServerAuthenticationKey()
 		return SDK.serverAuthenticationKey
+	end
+
+	function self._getBranchType()
+		return SDK.branch
 	end
 
 	function self._getUserAuthenticationKey()

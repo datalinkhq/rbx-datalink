@@ -17,6 +17,8 @@ return table.freeze({
 	PlaceId = "PlaceID",
 	Packet = "Packet",
 
+	BranchType = "branch",
+
 	EventName = "EventName",
 	EventParameters = "EventParameters",
 
