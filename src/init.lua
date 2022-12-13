@@ -256,6 +256,7 @@ function DatalinkSDK.new(datalinkSettings): Type.DatalinkInstance
 			datalinkUserToken = ""
 		}, datalinkSettings)),
 
+		onHeartbeat = Signal.new(),
 		onAuthenticated = Signal.new(),
 		onThrottled = Signal.new(), -- TODO
 		onMessageRequestSent = Signal.new(), -- TODO
