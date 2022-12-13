@@ -1,6 +1,7 @@
 local ThrottleComponent = { }
 
 local ThrottleLimitType, ThrottleLimits
+local ThrottleSignal
 
 function ThrottleComponent:isThrottled()
 	return self:getThrottleRatio() >= 1
@@ -32,12 +33,14 @@ function ThrottleComponent:throttleRequests(seconds)
 		return
 	end
 
+	ThrottleSignal:Fire(self._isThrottled)
 	task.delay(seconds, function()
 		if self._throttledTimestamp ~= markedTime or not self._isThrottled then
 			return
 		end
 
 		self._isThrottled = false
+		ThrottleSignal:Fire(self._isThrottled)
 	end)
 end
 
@@ -49,6 +52,8 @@ end
 function ThrottleComponent:init(SDK)
 	ThrottleLimitType = require(SDK.Enums.ThrottleLimitType)
 	ThrottleLimits = require(SDK.Data.ThrottleLimits)
+
+	ThrottleSignal = SDK.onThrottled
 
 	self:setThrottleLimit(ThrottleLimits[ThrottleLimitType.GameServerMaxOutboundRequests])
 end

@@ -86,6 +86,8 @@ function HttpComponent:requestAsync(endpointType, requestBody, requestHeaders)
 		local userUniqueIdentifier = self._getUserUniqueIdentifier()
 
 		local success, response = SchedulerComponent:addTaskAsync(function()
+			
+
 			return HttpService:RequestAsync({
 				[HttpsParameters.Headers] = Sift.Dictionary.mergeDeep(self._defaultHeaders, requestHeaders),
 				[HttpsParameters.Url] = targetEndpointUrl,
