@@ -107,7 +107,7 @@ function HttpComponent:requestAsync(endpointType, requestBody, requestHeaders)
 
 			resolve(response)
 		else
-			MessageRequestSentSignal:Fire(response)
+			MessageRequestFailSignal:Fire(response)
 
 			reject(response)
 		end
