@@ -121,6 +121,7 @@ end
 
 function SessionComponent:start(SDK)
 	function self._setServerAuthenticationKey(serverAuthenticationKey)
+		SDK.onHeartbeat:Fire(serverAuthenticationKey)
 		SDK.serverAuthenticationKey = serverAuthenticationKey
 	end
 end
