@@ -1,7 +1,7 @@
 export type DatalinkSDK = {
 	new: (settings: {
-		datalinkUserAccountId: number,
-		datalinkUserToken: string
+		UserID: number,
+	  API_KEY: string
 	}) -> DatalinkInstance
 }
 
