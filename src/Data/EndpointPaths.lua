@@ -10,6 +10,7 @@ return table.freeze({
 	[EndpointType.PublishLog] = "/logs/publish",
 	[EndpointType.FetchLog] = "/logs/fetch",
 
+	[EndpointType.PlayerTeleporting] = "/internal/playerTeleported",
 	[EndpointType.PlayerJoined] = "/internal/playerJoined",
 	[EndpointType.PlayerRemoving] = "/internal/playerLeft",
 	[EndpointType.ServerTerminated] = "/internal/serverTerminated",
