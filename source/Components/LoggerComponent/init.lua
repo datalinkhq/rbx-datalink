@@ -25,10 +25,10 @@ return function(datalinkInstance)
 			stackTrace = "<Verbose Logging Disabled>"
 		end
 
-		-- HttpComponent:requestAsync(EndpointType.PublishLog, {
-		-- 	[HttpsParameters.Trace] = string.format("%s\n%s", message, stackTrace),
-		-- 	[HttpsParameters.Type] = messageType
-		-- })
+		HttpComponent:requestAsync(EndpointType.PublishLog, {
+			[HttpsParameters.Trace] = string.format("%s\n%s", message, stackTrace),
+			[HttpsParameters.Type] = messageType
+		})
 	end
 
 	function LoggerComponent.Interface:start()
