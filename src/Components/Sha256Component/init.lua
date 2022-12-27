@@ -59,8 +59,10 @@ return function()
 	end
 
 	function Sha256Component.Internal:processMessage(message, messageSize)
+		local padding = 64 - bit32_band(messageSize + 9, 63);
+
 		messageSize = Sha256Component.Internal:processNumber(8 * messageSize, 8)
-		message ..= string_format("\128%s", string_rep("\0", 64 - bit32_band(messageSize + 9, 63)) .. messageSize)
+		message ..= "\128" .. string_rep("\0", padding) .. messageSize
 
 		assert(#message % 64 == 0, "Preprocessed content does not have a valid length of 64 bytes, and can not continue.")
 
