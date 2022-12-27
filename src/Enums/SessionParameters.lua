@@ -9,5 +9,8 @@ return table.freeze({
 	Region = "region",
 	EmailVerified = "emailVerified",
 	IsUnder13 = "under13",
-	SessionTime = "SessionTime"
+	SessionTime = "SessionTime",
+
+	IsTeleporting = "Teleporting",
+	TeleportPlaceId = "TeleportPlaceId"
 })

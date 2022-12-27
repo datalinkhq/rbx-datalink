@@ -10,7 +10,7 @@ return table.freeze({
 
 	PlayerJoined = "PlayerJoined",
 	PlayerRemoving = "PlayerRemoving",
-	ServerTerminated = "ServerTerminated",
+	PlayerTeleporting = "PlayerTeleporting",
 
 	FetchFlagInt = "FetchFlagInt"
 })
