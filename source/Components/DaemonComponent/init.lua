@@ -50,5 +50,5 @@ return function(datalinkInstance)
 		}
 	end
 
-	return DaemonComponent
+	return DaemonComponent.Interface
 end

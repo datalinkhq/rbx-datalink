@@ -7,7 +7,7 @@ return function()
 	local DatalinkSDK = require(ServerStorage.DatalinkSDK)
 	local Datalink
 
-	describe("Invoke all of the 'Event' interface test methods", function()
+	describe("Invoke all of the 'Flag' interface test methods", function()
 		beforeAll(function()
 			Datalink = DatalinkSDK.new({
 				datalinkUserAccountId = DATALINK_DEVELOPER_ACCOUNT_ID,
@@ -17,18 +17,6 @@ return function()
 			if not Datalink:isAuthenticated() then
 				Datalink:authenticateAsync():await()
 			end
-		end)
-
-		it("Should invoke the 'fireCustomEvent' successfully with 'Parameter1' key set", function()
-			local success, response = Datalink.Event:fireCustomEvent(
-				"CustomEventName", {
-					Parameter1 = "ParameterValue"
-				}
-			):await()
-
-			warn(success, response)
-
-			expect(success).to.equal(true)
 		end)
 	end)
 end

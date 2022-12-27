@@ -2,7 +2,7 @@ local ScriptContext = game:GetService("ScriptContext")
 local LogService = game:GetService("LogService")
 
 return function(datalinkInstance)
-	local HttpComponent = datalinkInstance.Internal:getComponent("HttpComponent")
+	local HttpComponent
 
 	local LogType = require(datalinkInstance.Enums.LogType)
 	local EndpointType = require(datalinkInstance.Enums.EndpointType)
@@ -25,13 +25,15 @@ return function(datalinkInstance)
 			stackTrace = "<Verbose Logging Disabled>"
 		end
 
-		HttpComponent:requestAsync(EndpointType.PublishLog, {
-			[HttpsParameters.Trace] = string.format("%s\n%s", message, stackTrace),
-			[HttpsParameters.Type] = messageType
-		})
+		-- HttpComponent:requestAsync(EndpointType.PublishLog, {
+		-- 	[HttpsParameters.Trace] = string.format("%s\n%s", message, stackTrace),
+		-- 	[HttpsParameters.Type] = messageType
+		-- })
 	end
 
 	function LoggerComponent.Interface:start()
+		HttpComponent = datalinkInstance.Internal:getComponent("HttpComponent")
+
 		datalinkInstance._connections:Add(LogService.MessageOut:Connect(function(message, messageType)
 			if messageType == Enum.MessageType.MessageError then
 				return

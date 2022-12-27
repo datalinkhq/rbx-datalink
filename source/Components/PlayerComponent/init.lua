@@ -10,9 +10,9 @@ local CHAT_STRING_VALIDATION = "#"
 local EMAIL_VERIFIED_ASSET_ID = 102611803
 
 return function(datalinkInstance)
-	local TeleportComponent = datalinkInstance.Internal:getComponent("TeleportComponent")
-	local HttpComponent = datalinkInstance.Internal:getComponent("HttpComponent")
-	local Sha256Component = datalinkInstance.Internal:getComponent("Sha256Component")
+	local TeleportComponent
+	local HttpComponent
+	local Sha256Component
 
 	local SessionParameters = require(datalinkInstance.Enums.SessionParameters)
 	local EndpointType = require(datalinkInstance.Enums.EndpointType)
@@ -82,6 +82,10 @@ return function(datalinkInstance)
 	end
 
 	function PlayerComponent.Interface:start()
+		TeleportComponent = datalinkInstance.Internal:getComponent("TeleportComponent")
+		HttpComponent = datalinkInstance.Internal:getComponent("HttpComponent")
+		Sha256Component = datalinkInstance.Internal:getComponent("Sha256Component")
+
 		if not RunService:IsRunning() then
 			return
 		end

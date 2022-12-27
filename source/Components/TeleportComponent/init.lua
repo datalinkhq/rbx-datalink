@@ -2,13 +2,13 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
 return function(datalinkInstance)
+	local PlayerComponent
+	local HttpComponent
+
 	local SessionParameters = require(datalinkInstance.Enums.SessionParameters)
 	local EndpointType = require(datalinkInstance.Enums.EndpointType)
 
 	local Janitor = require(datalinkInstance.Submodules.Janitor)
-
-	local PlayerComponent = datalinkInstance.Internal:getComponent("PlayerComponent")
-	local HttpComponent = datalinkInstance.Internal:getComponent("HttpComponent")
 
 	local TeleportComponent = { }
 
@@ -65,6 +65,9 @@ return function(datalinkInstance)
 	end
 
 	function TeleportComponent.Interface:start()
+		PlayerComponent = datalinkInstance.Internal:getComponent("PlayerComponent")
+		HttpComponent = datalinkInstance.Internal:getComponent("HttpComponent")
+
 		if not RunService:IsRunning() then
 			return
 		end

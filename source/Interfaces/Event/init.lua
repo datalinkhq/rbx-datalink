@@ -68,5 +68,5 @@ return function(datalinkInstance)
 
 	end
 
-	return Event
+	return Event.Interface
 end

@@ -13,6 +13,5 @@ return table.freeze({
 	[EndpointType.PlayerTeleporting] = "/internal/playerTeleported",
 	[EndpointType.PlayerJoined] = "/internal/playerJoined",
 	[EndpointType.PlayerRemoving] = "/internal/playerLeft",
-	[EndpointType.ServerTerminated] = "/internal/serverTerminated",
 	[EndpointType.FetchFlagInt] = "/ff/fetch"
 })

@@ -4,8 +4,8 @@ local HTTPS_LOOPBACK_ADDRESS = "127.0.0.1"
 local HTTPS_RESOURCE_ERROR = "HttpService is not allowed to access ROBLOX resources"
 
 return function(datalinkInstance)
-	local ThrottleComponent = datalinkInstance.Internal:getComponent("ThrottleComponent")
-	local SchedulerComponent = datalinkInstance.Internal:getComponent("SchedulerComponent")
+	local ThrottleComponent
+	local SchedulerComponent
 
 	local EndpointPaths = require(datalinkInstance.Data.EndpointPaths)
 	local EndpointMethods = require(datalinkInstance.Data.EndpointMethods)
@@ -80,8 +80,12 @@ return function(datalinkInstance)
 		local targetEndpointUrl, targetMethod = HttpComponent.Internal:resolveEndpoint(endpointType)
 
 		return Promise.new(function(resolve, reject)
-			if not HttpComponent.httpEnabled then
+			if not HttpComponent.HttpEnabled then
 				reject("Http requests are not enabled. Enable via game settings ")
+			end
+
+			while not datalinkInstance:isAuthenticated() do
+				task.wait()
 			end
 
 			while ThrottleComponent:isThrottled() do
@@ -115,6 +119,9 @@ return function(datalinkInstance)
 	end
 
 	function HttpComponent.Interface:start()
+		ThrottleComponent = datalinkInstance.Internal:getComponent("ThrottleComponent")
+		SchedulerComponent = datalinkInstance.Internal:getComponent("SchedulerComponent")
+
 		HttpComponent.Internal:addDefaultRequestHeader("Content-Type", "application/json; charset=utf-8")
 
 		HttpComponent.Internal:addDefaultRequestHeader("Datalink-Version", datalinkInstance.Version)

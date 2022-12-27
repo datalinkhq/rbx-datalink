@@ -121,9 +121,9 @@ return function()
 		end
 	end
 
-	function Sha256Component.Internal:digestString(message, salt)
+	function Sha256Component.Internal:digestString(message)
 		local contentLength = string_len(message)
-		local content = Sha256Component.Internal:processMessage(message .. (salt or ""), contentLength)
+		local content = Sha256Component.Internal:processMessage(message, contentLength)
 
 		contentLength = string_len(message)
 		for index = 1, contentLength, 64 do
@@ -142,10 +142,14 @@ return function()
 	end
 
 	function Sha256Component.Interface:hash(message, salt)
+		if salt then
+			message ..= "_" .. salt
+		end
+
 		if Sha256Component.Cache[message] then
 			return Sha256Component.Cache[message]
 		else
-			Sha256Component.Cache[message] = Sha256Component.Internal:digestString(message, salt or "")
+			Sha256Component.Cache[message] = Sha256Component.Internal:digestString(message)
 		end
 
 		return Sha256Component.Cache[message]

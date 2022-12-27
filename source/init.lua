@@ -4,40 +4,38 @@ local DATALINK_CONNECTIONS_JANITOR_INDEX = "InternalConnectionsJanitor"
 
 local Datalink = { }
 
-Datalink.Data = script.Data
-Datalink.Enums = script.Enums
-Datalink.Submodules = script.Submodules
-Datalink.Components = script.Components
-
 Datalink.Version = "1.1.0"
 Datalink.Branch = "Development"
 
 Datalink.Instances = { }
 Datalink.Interface = { }
-Datalink.Schema = { }
+Datalink.Schema = {
+	Version = Datalink.Version,
+	Branch = Datalink.Branch,
+
+	Data = script.Data,
+	Enums = script.Enums,
+	Submodules = script.Submodules,
+	Components = script.Components,
+}
 
 local Types = require(script.Types)
 
-local Sift = require(Datalink.Submodules.Sift)
-local Promise = require(Datalink.Submodules.Promise)
-local Janitor = require(Datalink.Submodules.Janitor)
-local Signal = require(Datalink.Submodules.Signal)
+local Sift = require(Datalink.Schema.Submodules.Sift)
+local Janitor = require(Datalink.Schema.Submodules.Janitor)
+local Signal = require(Datalink.Schema.Submodules.Signal)
 
-local HttpsParameters = require(Datalink.Enums.HttpsParameters)
-local EndpointType = require(Datalink.Enums.EndpointType)
+local HttpsParameters = require(Datalink.Schema.Enums.HttpsParameters)
+local EndpointType = require(Datalink.Schema.Enums.EndpointType)
 
 function Datalink.Schema:authenticateAsync()
-	return Promise.new(function(resolve, reject)
-		local SessionComponent = self.Internal:getComponent("SessionComponent")
+	local SessionComponent = self.Internal:getComponent("SessionComponent")
 
-		SessionComponent:authenticateServerAsync():andThen(function()
-			self.onAuthenticated:Fire(self.serverAuthenticationKey)
-			SessionComponent:spawnHeartbeatDaemon()
+	return SessionComponent:authenticateServerAsync():andThen(function(serverAuthenticationKey)
+		self.serverAuthenticationKey = serverAuthenticationKey
+		self.onAuthenticated:Fire(self.serverAuthenticationKey)
 
-			resolve()
-		end):catch(function(...)
-			reject(...)
-		end)
+		SessionComponent:spawnHeartbeatDaemon()
 	end)
 end
 
@@ -88,13 +86,13 @@ function Datalink.Interface.new(datalinkSettings): Types.DatalinkSchema
 		datalinkInstance._janitor:Add(datalinkInstance._connections, "Destroy", DATALINK_CONNECTIONS_JANITOR_INDEX)
 
 		datalinkInstance.Internal = require(script.Interfaces.Internal)(datalinkInstance)
+
+		datalinkInstance.Internal:buildDatalinkComponentInstances()
+		datalinkInstance.Internal:invokeComponentMethod("start")
+
 		datalinkInstance.Logging = require(script.Interfaces.Logging)(datalinkInstance)
 		datalinkInstance.Event = require(script.Interfaces.Event)(datalinkInstance)
 		datalinkInstance.Flag = require(script.Interfaces.Flag)(datalinkInstance)
-
-		datalinkInstance.Internal:buildDatalinkComponentInstances()
-
-		datalinkInstance.Internal:invokeComponentMethod("start")
 
 		datalinkInstance.Internal:setLocalVariable("Internal.VerboseLoggingEnabled", false)
 		datalinkInstance.Internal:setLocalVariable("Internal.DebugEnabled", true)
@@ -110,9 +108,8 @@ function Datalink.Interface.new(datalinkSettings): Types.DatalinkSchema
 
 		table.freeze(datalinkInstance._components)
 
-		Datalink.Instances[datalinkInstance._settings.datalinkUserToken] = datalinkInstance._proxy
-
-		return datalinkInstance.Internal:generateInstanceProxy() :: typeof(datalinkInstance)
+		Datalink.Instances[datalinkInstance._settings.datalinkUserToken] = datalinkInstance.Internal:generateInstanceProxy()
+		return Datalink.Instances[datalinkInstance._settings.datalinkUserToken] :: typeof(datalinkInstance)
 	end
 end
 

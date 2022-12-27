@@ -66,6 +66,10 @@ return function(datalinkInstance)
 			return datalinkInstance[key]
 		end
 
+		proxiedInstanceMetatable.__newindex = function(_, key, value)
+			datalinkInstance[key] = value
+		end
+
 		return proxiedInstance
 	end
 

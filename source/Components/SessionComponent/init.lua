@@ -3,8 +3,8 @@ local HttpService = game:GetService("HttpService")
 local INVALID_SESSION_KEY_STATUS = "Session Key Invalid"
 
 return function(datalinkInstance)
-	local DaemonComponent = datalinkInstance.Internal:getComponent("DaemonComponent")
-	local HttpComponent = datalinkInstance.Internal:getComponent("HttpComponent")
+	local DaemonComponent
+	local HttpComponent
 
 	local HttpsParameters = require(datalinkInstance.Enums.HttpsParameters)
 	local EndpointType = require(datalinkInstance.Enums.EndpointType)
@@ -110,13 +110,10 @@ return function(datalinkInstance)
 
 				resolve(bodyJSON[HttpsParameters.SessionKey])
 			else
+				SessionComponent.Internal:onSessionAuthenticationError(statusMessage)
+
 				reject(statusMessage)
 			end
-		end):andThen(function(serverAuthenticationKey)
-			datalinkInstance.onHeartbeat:Fire(serverAuthenticationKey)
-			datalinkInstance.serverAuthenticationKey = serverAuthenticationKey
-		end):catch(function(...)
-			SessionComponent.Internal:onSessionAuthenticationError(...)
 		end)
 	end
 
@@ -130,6 +127,11 @@ return function(datalinkInstance)
 		game:BindToClose(function()
 			datalinkInstance:destroyAsync()
 		end)
+	end
+
+	function SessionComponent.Interface:start()
+		DaemonComponent = datalinkInstance.Internal:getComponent("DaemonComponent")
+		HttpComponent = datalinkInstance.Internal:getComponent("HttpComponent")
 	end
 
 	return SessionComponent.Interface

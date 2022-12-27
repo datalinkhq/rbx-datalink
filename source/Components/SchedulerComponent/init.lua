@@ -1,10 +1,10 @@
 local DAEMON_SCHEDULER_NAME = "InternalScheduler"
 
 return function(datalinkInstance)
+	local DaemonComponent
+
 	local Promise = require(datalinkInstance.Submodules.Promise)
 	local Sift = require(datalinkInstance.Submodules.Sift)
-
-	local DaemonComponent = datalinkInstance.Internal:getComponent("DaemonComponent")
 
 	local SchedulerComponent = { }
 
@@ -13,6 +13,22 @@ return function(datalinkInstance)
 
 	SchedulerComponent.Interface = { }
 	SchedulerComponent.Internal = { }
+
+	function SchedulerComponent.Internal:executeTask(targetTaskIndex)
+		local taskObject = table.remove(SchedulerComponent.TaskList, targetTaskIndex)
+		local taskResolve, taskSuccess = { }, false
+
+		if taskObject.callback then
+			taskResolve = { pcall(taskObject.callback) }
+			taskSuccess = table.remove(taskResolve, 1)
+
+			if taskObject.resolve and taskSuccess then
+				taskObject.resolve(table.unpack(taskResolve))
+			elseif taskObject.reject and not taskSuccess then
+				taskObject.reject(table.unpack(taskResolve))
+			end
+		end
+	end
 
 	function SchedulerComponent.Internal:createDaemonCallback()
 		return function()
@@ -27,7 +43,7 @@ return function(datalinkInstance)
 					continue
 				end
 
-				self:executeTask(1)
+				SchedulerComponent.Internal:executeTask(1)
 			end
 		end
 	end
@@ -62,23 +78,9 @@ return function(datalinkInstance)
 		end
 	end
 
-	function SchedulerComponent.Interface:executeTask(targetTaskIndex)
-		local taskObject = table.remove(SchedulerComponent.TaskList, targetTaskIndex)
-		local taskResolve, taskSuccess = { }, false
-
-		if taskObject.callback then
-			taskResolve = { pcall(taskObject.callback) }
-			taskSuccess = table.remove(taskResolve, 1)
-
-			if taskObject.resolve and taskSuccess then
-				taskObject.resolve(table.unpack(taskResolve))
-			elseif taskObject.reject and not taskSuccess then
-				taskObject.reject(table.unpack(taskResolve))
-			end
-		end
-	end
-
 	function SchedulerComponent.Interface:start()
+		DaemonComponent = datalinkInstance.Internal:getComponent("DaemonComponent")
+
 		DaemonComponent:addDaemon(
 			SchedulerComponent.Internal:createDaemonCallback(),
 			DAEMON_SCHEDULER_NAME,
