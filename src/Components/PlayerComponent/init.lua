@@ -12,11 +12,10 @@ local EMAIL_VERIFIED_ASSET_ID = 102611803
 return function(datalinkInstance)
 	local TeleportComponent = datalinkInstance.Internal:getComponent("TeleportComponent")
 	local HttpComponent = datalinkInstance.Internal:getComponent("HttpComponent")
+	local Sha256Component = datalinkInstance.Internal:getComponent("Sha256Component")
 
 	local SessionParameters = require(datalinkInstance.Enums.SessionParameters)
 	local EndpointType = require(datalinkInstance.Enums.EndpointType)
-
-	local sha256 = require(script.sha256)
 
 	local PlayerComponent = { }
 
@@ -33,12 +32,12 @@ return function(datalinkInstance)
 		local success1, playerChatResponse = pcall(Chat.FilterStringForBroadcast, Chat, CHAT_STRING_VERIFICATION, playerInstance)
 
 		PlayerComponent.PlayerClocks[playerInstance] = os.clock()
-		PlayerComponent.PlayerHashes[playerInstance] = sha256(tostring(playerInstance.UserId))
+		PlayerComponent.PlayerHashes[playerInstance] = Sha256Component:hash(tostring(playerInstance.UserId))
 		PlayerComponent.PlayerSessions[PlayerComponent.PlayerHashes[playerInstance]] = {
 			[SessionParameters.AccountId] = PlayerComponent.PlayerHashes[playerInstance],
 			[SessionParameters.AcccountAge] = playerInstance.AccountAge,
 			[SessionParameters.FollowedPlayer] = playerInstance.FollowUserId ~= 0,
-			[SessionParameters.FollowedPlayerId] = playerInstance.FollowUserId ~= 0 and sha256(tostring(playerInstance.FollowUserId)) or "Unknown",
+			[SessionParameters.FollowedPlayerId] = playerInstance.FollowUserId ~= 0 and  Sha256Component:hash(tostring(playerInstance.FollowUserId)) or "Unknown",
 			[SessionParameters.Premium] = playerInstance.MembershipType ~= Enum.MembershipType.None,
 			[SessionParameters.MachineLocale] = playerInstance.LocaleId,
 			[SessionParameters.BlueVerified] = playerInstance.HasVerifiedBadge,
