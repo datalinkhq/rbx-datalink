@@ -1,69 +1,49 @@
 local ScriptContext = game:GetService("ScriptContext")
 local LogService = game:GetService("LogService")
 
-local EndpointType
-local LogType
-local HttpsParameters
+return function(datalinkInstance)
+	local HttpComponent = datalinkInstance.Internal:getComponent("HttpComponent")
 
-local HttpComponent
-local LoggerComponent = { }
+	local LogType = require(datalinkInstance.Enums.LogType)
+	local EndpointType = require(datalinkInstance.Enums.EndpointType)
+	local HttpsParameters = require(datalinkInstance.Enums.HttpsParameters)
 
-local logEnumTypes
+	local LoggerComponent = { }
 
-function LoggerComponent:logMessage(message, ...)
-	if not self._getSDKDebugEnabled() then
-		return
-	end
+	LoggerComponent.Interface = { }
+	LoggerComponent.Internal = { }
 
-	self._lastLoggedMessage = message
-	print(string.format(message, ...))
-end
-
-function LoggerComponent:processMessage(messageType, message, stackTrace)
-	if message == self._lastLoggedMessage then
-		return
-	end
-
-	HttpComponent:requestAsync(EndpointType.PublishLog, {
-		[HttpsParameters.Trace] = string.format("%s\n%s", message, stackTrace),
-		[HttpsParameters.Type] = messageType
-	})
-end
-
-function LoggerComponent:start(SDK)
-	self._getSDKVerboseLoggingEnabled, self._getSDKDebugEnabled = function()
-		return SDK:getLocalVariable("Internal.VerboseLoggingEnabled")
-	end, function()
-		return SDK:getLocalVariable("Internal.DebugEnabled")
-	end
-
-	SDK._connectionsJanitor:Add(LogService.MessageOut:Connect(function(message, messageType)
-		if messageType == Enum.MessageType.MessageError or not self._getSDKVerboseLoggingEnabled() then
-			return
-		end
-
-		self:processMessage(logEnumTypes[messageType], message, "<Stack Trace Not Attached>")
-	end))
-
-	SDK._connectionsJanitor:Add(ScriptContext.Error:Connect(function(message, stackTrace)
-		self:processMessage(logEnumTypes[Enum.MessageType.MessageError], message, stackTrace)
-	end))
-end
-
-function LoggerComponent:init(SDK)
-	LogType = require(SDK.Enums.LogType)
-	EndpointType = require(SDK.Enums.EndpointType)
-	HttpsParameters = require(SDK.Enums.HttpsParameters)
-
-	HttpComponent = SDK:_getComponent("HttpComponent")
-
-	logEnumTypes = {
+	LoggerComponent.EnumerationTypes = {
 		[Enum.MessageType.MessageOutput] = LogType.Debug,
 		[Enum.MessageType.MessageInfo] = LogType.Information,
 		[Enum.MessageType.MessageWarning] = LogType.Warning,
 		[Enum.MessageType.MessageError] = LogType.Error
-		-- [Enum.MessageType.MessageError] = LogType.Fatal
 	}
-end
 
-return LoggerComponent
+	function LoggerComponent.Internal:processMessage(messageType, message, stackTrace)
+		if not datalinkInstance.Internal:getLocalVariable("Internal.VerboseLoggingEnabled") then
+			stackTrace = "<Verbose Logging Disabled>"
+		end
+
+		HttpComponent:requestAsync(EndpointType.PublishLog, {
+			[HttpsParameters.Trace] = string.format("%s\n%s", message, stackTrace),
+			[HttpsParameters.Type] = messageType
+		})
+	end
+
+	function LoggerComponent.Interface:start()
+		datalinkInstance._connections:Add(LogService.MessageOut:Connect(function(message, messageType)
+			if messageType == Enum.MessageType.MessageError then
+				return
+			end
+
+			LoggerComponent.Internal:processMessage(LoggerComponent.EnumerationTypes[messageType], message, "<Stack Trace Not Attached>")
+		end))
+
+		datalinkInstance._connections:Add(ScriptContext.Error:Connect(function(message, stackTrace)
+			LoggerComponent.Internal:processMessage(LoggerComponent.EnumerationTypes[Enum.MessageType.MessageError], message, stackTrace)
+		end))
+	end
+
+	return LoggerComponent.Interface
+end

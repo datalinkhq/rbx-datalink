@@ -3,156 +3,123 @@ local HttpService = game:GetService("HttpService")
 local HTTPS_LOOPBACK_ADDRESS = "127.0.0.1"
 local HTTPS_RESOURCE_ERROR = "HttpService is not allowed to access ROBLOX resources"
 
-local Promise
-local Sift
+return function(datalinkInstance)
+	local ThrottleComponent = datalinkInstance.Internal:getComponent("ThrottleComponent")
+	local SchedulerComponent = datalinkInstance.Internal:getComponent("SchedulerComponent")
 
-local HttpsParameters
-local DatalinkSchema, SchemaType
+	local EndpointPaths = require(datalinkInstance.Data.EndpointPaths)
+	local EndpointMethods = require(datalinkInstance.Data.EndpointMethods)
+	local DatalinkSchema = require(datalinkInstance.Data.DatalinkSchema)
 
-local EndpointPaths
-local EndpointMethods
+	local HttpsParameters = require(datalinkInstance.Enums.HttpsParameters)
+	local SchemaType = require(datalinkInstance.Enums.SchemaType)
 
-local MessageRequestSentSignal
-local MessageRequestFailSignal
+	local Promise = require(datalinkInstance.Submodules.Promise)
+	local Sift = require(datalinkInstance.Submodules.Sift)
 
-local SchedulerComponent
-local ThrottleComponent
-local HttpComponent = {
-	_defaultHeaders = { }
-}
+	local HttpComponent = { }
 
-function HttpComponent:_addDefaultRequestHeader(headerKey, headerValue)
-	self._defaultHeaders[headerKey] = headerValue
-end
+	HttpComponent.DefaultHeaders = { }
+	HttpComponent.HttpEnabled = select(2, pcall(HttpService.GetAsync, HttpService, HTTPS_LOOPBACK_ADDRESS)) == HTTPS_RESOURCE_ERROR
 
-function HttpComponent:_removeDefaultRequestHeader(headerKey)
-	self._defaultHeaders[headerKey] = nil
-end
+	HttpComponent.Interface = { }
+	HttpComponent.Internal = { }
 
-function HttpComponent:_resolveEndpoint(endpointType)
-	local endpointPath = EndpointPaths[endpointType] -- 
-	local endpointMethods = EndpointMethods[endpointType]
-
-	local resolvedEndpointName = self._isOfflineWebserver and
-		string.format(DatalinkSchema[SchemaType.Model], DatalinkSchema[SchemaType.ModelUrlOffline], endpointPath) or
-		string.format(DatalinkSchema[SchemaType.Model], DatalinkSchema[SchemaType.ModelUrlOnline], endpointPath)
-
-	return resolvedEndpointName, endpointMethods
-end
-
-function HttpComponent:requestPriorityAsync(endpointType, requestBody, requestHeaders)
-	local targetEndpointUrl, targetMethod = self:_resolveEndpoint(endpointType)
-
-	return Promise.new(function(resolve, reject)
-		if not self._httpEnabled then
-			reject("Http requests are not enabled. Enable via game settings ")
-		end
-
-		local serverAuthenticationKey = self._getServerAuthenticationKey()
-		local userAuthenticationKey = self._getUserAuthenticationKey()
-		local userUniqueIdentifier = self._getUserUniqueIdentifier()
-
-		local success, response = SchedulerComponent:addTaskAsync(function()
-			return HttpService:RequestAsync({
-				[HttpsParameters.Headers] = Sift.Dictionary.mergeDeep(self._defaultHeaders, requestHeaders),
-				[HttpsParameters.Url] = targetEndpointUrl,
-				[HttpsParameters.Method] = targetMethod,
-				[HttpsParameters.Body] = HttpService:JSONEncode(Sift.Dictionary.mergeDeep({
-					[HttpsParameters.Token] = serverAuthenticationKey or userAuthenticationKey,
-					[HttpsParameters.Id] = userUniqueIdentifier
-				}, requestBody))
-			})
-		end, true):await()
-
-		if success then
-			resolve(response)
-		else
-			reject(response)
-		end
-	end)
-end
-
-function HttpComponent:requestAsync(endpointType, requestBody, requestHeaders)
-	local targetEndpointUrl, targetMethod = self:_resolveEndpoint(endpointType)
-
-	return Promise.new(function(resolve, reject)
-		if not self._httpEnabled then
-			reject("Http requests are not enabled. Enable via game settings ")
-		end
-
-		while ThrottleComponent:isThrottled() do
-			task.wait(1)
-		end
-
-		local serverAuthenticationKey = self._getServerAuthenticationKey()
-		local userAuthenticationKey = self._getUserAuthenticationKey()
-		local userUniqueIdentifier = self._getUserUniqueIdentifier()
-
-		local success, response = SchedulerComponent:addTaskAsync(function()
-			return HttpService:RequestAsync({
-				[HttpsParameters.Headers] = Sift.Dictionary.mergeDeep(self._defaultHeaders, requestHeaders),
-				[HttpsParameters.Url] = targetEndpointUrl,
-				[HttpsParameters.Method] = targetMethod,
-				[HttpsParameters.Body] = HttpService:JSONEncode(Sift.Dictionary.mergeDeep({
-					[HttpsParameters.Token] = serverAuthenticationKey or userAuthenticationKey,
-					[HttpsParameters.Id] = userUniqueIdentifier
-				}, requestBody))
-			})
-		end):await()
-
-		ThrottleComponent:increment()
-
-		if success then
-			MessageRequestSentSignal:Fire(endpointType)
-
-			resolve(response)
-		else
-			MessageRequestFailSignal:Fire(response)
-
-			reject(response)
-		end
-	end)
-end
-
-function HttpComponent:start(SDK)
-	self._httpEnabled = select(2, pcall(HttpService.GetAsync, HttpService, HTTPS_LOOPBACK_ADDRESS)) == HTTPS_RESOURCE_ERROR
-
-	function self._getServerAuthenticationKey()
-		return SDK.serverAuthenticationKey
+	function HttpComponent.Internal:addDefaultRequestHeader(headerKey, headerValue)
+		HttpComponent.DefaultHeaders[headerKey] = headerValue
 	end
 
-	function self._getUserAuthenticationKey()
-		return SDK._settings.datalinkUserToken
+	function HttpComponent.Internal:removeDefaultRequestHeader(headerKey)
+		HttpComponent.DefaultHeaders[headerKey] = nil
 	end
 
-	function self._getUserUniqueIdentifier()
-		return SDK._settings.datalinkUserAccountId
+	function HttpComponent.Internal:resolveEndpoint(endpointType)
+		local endpointPath = EndpointPaths[endpointType] -- 
+		local endpointMethods = EndpointMethods[endpointType]
+
+		local resolvedEndpointName = datalinkInstance.Branch == "Development" and
+			string.format(DatalinkSchema[SchemaType.Model], DatalinkSchema[SchemaType.ModelUrlOffline], endpointPath) or
+			string.format(DatalinkSchema[SchemaType.Model], DatalinkSchema[SchemaType.ModelUrlOnline], endpointPath)
+
+		return resolvedEndpointName, endpointMethods
 	end
+
+	function HttpComponent.Interface:requestPriorityAsync(endpointType, requestBody, requestHeaders)
+		local targetEndpointUrl, targetMethod = HttpComponent.Internal:resolveEndpoint(endpointType)
+
+		return Promise.new(function(resolve, reject)
+			if not HttpComponent.HttpEnabled then
+				reject("Http requests are not enabled. Enable via game settings ")
+			end
+
+			local success, response = SchedulerComponent:addTaskAsync(function()
+				return HttpService:RequestAsync({
+					[HttpsParameters.Headers] = Sift.Dictionary.mergeDeep(HttpComponent.DefaultHeaders, requestHeaders),
+					[HttpsParameters.Url] = targetEndpointUrl,
+					[HttpsParameters.Method] = targetMethod,
+					[HttpsParameters.Body] = HttpService:JSONEncode(Sift.Dictionary.mergeDeep({
+						[HttpsParameters.Token] = datalinkInstance.serverAuthenticationKey or datalinkInstance._settings.datalinkUserToken,
+						[HttpsParameters.Id] = datalinkInstance._settings.datalinkUserAccountId
+					}, requestBody))
+				})
+			end, true):await()
+
+			if success then
+				datalinkInstance.onMessageRequestSent:Fire(endpointType)
+
+				resolve(response)
+			else
+				datalinkInstance.onMessageRequestFail:Fire(response)
+
+				reject(response)
+			end
+		end)
+	end
+
+	function HttpComponent.Interface:requestAsync(endpointType, requestBody, requestHeaders)
+		local targetEndpointUrl, targetMethod = HttpComponent.Internal:resolveEndpoint(endpointType)
+
+		return Promise.new(function(resolve, reject)
+			if not HttpComponent.httpEnabled then
+				reject("Http requests are not enabled. Enable via game settings ")
+			end
+
+			while ThrottleComponent:isThrottled() do
+				task.wait(1)
+			end
+
+			local success, response = SchedulerComponent:addTaskAsync(function()
+				return HttpService:RequestAsync({
+					[HttpsParameters.Headers] = Sift.Dictionary.mergeDeep(HttpComponent.DefaultHeaders, requestHeaders),
+					[HttpsParameters.Url] = targetEndpointUrl,
+					[HttpsParameters.Method] = targetMethod,
+					[HttpsParameters.Body] = HttpService:JSONEncode(Sift.Dictionary.mergeDeep({
+						[HttpsParameters.Token] = datalinkInstance.serverAuthenticationKey or datalinkInstance._settings.datalinkUserToken,
+						[HttpsParameters.Id] = datalinkInstance._settings.datalinkUserAccountId
+					}, requestBody))
+				})
+			end):await()
+
+			ThrottleComponent:increment()
+
+			if success then
+				datalinkInstance.onMessageRequestSent:Fire(endpointType)
+
+				resolve(response)
+			else
+				datalinkInstance.onMessageRequestFail:Fire(response)
+
+				reject(response)
+			end
+		end)
+	end
+
+	function HttpComponent.Interface:start()
+		HttpComponent.Internal:addDefaultRequestHeader("Content-Type", "application/json; charset=utf-8")
+
+		HttpComponent.Internal:addDefaultRequestHeader("Datalink-Version", datalinkInstance.Version)
+		HttpComponent.Internal:addDefaultRequestHeader("Datalink-Branch", datalinkInstance.Branch)
+	end
+
+	return HttpComponent.Interface
 end
-
-function HttpComponent:init(SDK)
-	EndpointPaths = require(SDK.Data.EndpointPaths)
-	EndpointMethods = require(SDK.Data.EndpointMethods)
-	DatalinkSchema = require(SDK.Data.DatalinkSchema)
-
-	HttpsParameters = require(SDK.Enums.HttpsParameters)
-	SchemaType = require(SDK.Enums.SchemaType)
-
-	Promise = require(SDK.Submodules.Promise)
-	Sift = require(SDK.Submodules.Sift)
-
-	MessageRequestSentSignal = SDK.onMessageRequestSent
-	MessageRequestFailSignal = SDK.onMessageRequestFail
-
-	ThrottleComponent = SDK:_getComponent("ThrottleComponent")
-	SchedulerComponent = SDK:_getComponent("SchedulerComponent")
-
-	self._isOfflineWebserver = SDK.Branch == "Development"
-
-	self:_addDefaultRequestHeader("Content-Type", "application/json; charset=utf-8")
-
-	self:_addDefaultRequestHeader("Datalink-Version", SDK.Version)
-	self:_addDefaultRequestHeader("Datalink-Branch", SDK.Branch)
-end
-
-return HttpComponent

@@ -1,89 +1,106 @@
 local Players = game:GetService("Players")
 local LocalizationService = game:GetService("LocalizationService")
 local MarketplaceService = game:GetService("MarketplaceService")
+local RunService = game:GetService("RunService")
 local Chat = game:GetService("Chat")
 
 local CHAT_STRING_VERIFICATION = "42134"
 local CHAT_STRING_VALIDATION = "#"
 
-local SessionParameters
-local EndpointType
+local EMAIL_VERIFIED_ASSET_ID = 102611803
 
-local HttpComponent
-local PlayerComponent = {
-	_joinClocks = { },
-	_sessions = { },
-	_hashes = { },
+return function(datalinkInstance)
+	local TeleportComponent = datalinkInstance.Internal:getComponent("TeleportComponent")
+	local HttpComponent = datalinkInstance.Internal:getComponent("HttpComponent")
 
-	_sha256 = nil
-}
+	local SessionParameters = require(datalinkInstance.Enums.SessionParameters)
+	local EndpointType = require(datalinkInstance.Enums.EndpointType)
 
-function PlayerComponent:_hashPlayerUserId(playerUserId)
-	self._sha256 = self._sha256 or require(script.sha256)
+	local sha256 = require(script.sha256)
 
-	return self._sha256(tostring(playerUserId))
-end
+	local PlayerComponent = { }
 
-function PlayerComponent:_onPlayerJoined(playerInstance)
-	local success0, playerEmailVerified = pcall(MarketplaceService.PlayerOwnsAsset, MarketplaceService, playerInstance, 102611803)
-	local success1, playerChatResponse = pcall(Chat.FilterStringForBroadcast, Chat, CHAT_STRING_VERIFICATION, playerInstance)
+	PlayerComponent.TeleportStates = { }
+	PlayerComponent.PlayerClocks = { }
+	PlayerComponent.PlayerSessions = { }
+	PlayerComponent.PlayerHashes = { }
 
-	self._joinClocks[playerInstance] = os.clock()
-	self._hashes[playerInstance] = self:_hashPlayerUserId(playerInstance.UserId)
-	self._sessions[self._hashes[playerInstance]] = {
-		[SessionParameters.AccountId] = self._hashes[playerInstance],
-		[SessionParameters.AcccountAge] = playerInstance.AccountAge,
-		[SessionParameters.FollowedPlayer] = playerInstance.FollowUserId ~= 0,
-		[SessionParameters.FollowedPlayerId] = playerInstance.FollowUserId ~= 0 and self:_hashPlayerUserId(playerInstance.FollowUserId) or "Unknown",
-		[SessionParameters.Premium] = playerInstance.MembershipType ~= Enum.MembershipType.None,
-		[SessionParameters.MachineLocale] = playerInstance.LocaleId,
-		[SessionParameters.BlueVerified] = playerInstance.HasVerifiedBadge,
-		[SessionParameters.Region] = LocalizationService:GetCountryRegionForPlayerAsync(playerInstance),
-		[SessionParameters.EmailVerified] = if success0 then playerEmailVerified else "Unknown",
-		[SessionParameters.IsUnder13] = if success1 then string.find(playerChatResponse, CHAT_STRING_VALIDATION) == nil else "Unknown"
-	}
+	PlayerComponent.Internal = { }
+	PlayerComponent.Interface = { }
 
-	HttpComponent:requestAsync(EndpointType.PlayerJoined, self._sessions[self._hashes[playerInstance]])
-end
+	function PlayerComponent.Internal:onPlayerJoined(playerInstance)
+		local success0, playerEmailVerified = pcall(MarketplaceService.PlayerOwnsAsset, MarketplaceService, playerInstance, EMAIL_VERIFIED_ASSET_ID)
+		local success1, playerChatResponse = pcall(Chat.FilterStringForBroadcast, Chat, CHAT_STRING_VERIFICATION, playerInstance)
 
-function PlayerComponent:_onPlayerLeft(playerInstance)
-	HttpComponent:requestAsync(EndpointType.PlayerRemoving, {
-		[SessionParameters.AccountId] = self._hashes[playerInstance],
-		[SessionParameters.SessionTime] = os.clock() - self._joinClocks[playerInstance],
-	}):andThen(function()
-		self._sessions[self._hashes[playerInstance]] = nil
-		self._hashes[playerInstance] = nil
-		self._joinClocks[playerInstance] = nil
-	end):catch(function()
-		task.wait(5)
+		PlayerComponent.PlayerClocks[playerInstance] = os.clock()
+		PlayerComponent.PlayerHashes[playerInstance] = sha256(tostring(playerInstance.UserId))
+		PlayerComponent.PlayerSessions[PlayerComponent.PlayerHashes[playerInstance]] = {
+			[SessionParameters.AccountId] = PlayerComponent.PlayerHashes[playerInstance],
+			[SessionParameters.AcccountAge] = playerInstance.AccountAge,
+			[SessionParameters.FollowedPlayer] = playerInstance.FollowUserId ~= 0,
+			[SessionParameters.FollowedPlayerId] = playerInstance.FollowUserId ~= 0 and sha256(tostring(playerInstance.FollowUserId)) or "Unknown",
+			[SessionParameters.Premium] = playerInstance.MembershipType ~= Enum.MembershipType.None,
+			[SessionParameters.MachineLocale] = playerInstance.LocaleId,
+			[SessionParameters.BlueVerified] = playerInstance.HasVerifiedBadge,
+			[SessionParameters.Region] = LocalizationService:GetCountryRegionForPlayerAsync(playerInstance),
+			[SessionParameters.EmailVerified] = if success0 then playerEmailVerified else "Unknown",
+			[SessionParameters.IsUnder13] = if success1 then string.find(playerChatResponse, CHAT_STRING_VALIDATION) == nil else "Unknown"
+		}
 
-		self:_onPlayerLeft(playerInstance)
-	end)
-end
-
-function PlayerComponent:getPlayerHash(playerInstance)
-	return self._hashes[playerInstance]
-end
-
-function PlayerComponent:start(SDK)
-	for _, playerInstance in Players:GetPlayers() do
-		task.spawn(self._onPlayerJoined, self, playerInstance)
+		HttpComponent:requestAsync(EndpointType.PlayerJoined, PlayerComponent.PlayerSessions[PlayerComponent.PlayerHashes[playerInstance]])
 	end
 
-	SDK._connectionsJanitor:Add(Players.PlayerAdded:Connect(function(...)
-		self:_onPlayerJoined(...)
-	end))
+	function PlayerComponent.Internal:onPlayerLeft(playerInstance)
+		if TeleportComponent:getPlayerTeleportState(playerInstance) then
+			return
+		end
 
-	SDK._connectionsJanitor:Add(Players.PlayerRemoving:Connect(function(...)
-		self:_onPlayerLeft(...)
-	end))
+		HttpComponent:requestAsync(EndpointType.PlayerRemoving, {
+			[SessionParameters.AccountId] = PlayerComponent.Interface:getPlayerHash(playerInstance),
+			[SessionParameters.SessionTime] = PlayerComponent.Interface:getPlayerSessionLength(playerInstance),
+			[SessionParameters.IsTeleporting] = false,
+		}):andThen(function()
+			PlayerComponent.Interface:removePlayerData(playerInstance)
+		end):catch(function()
+			task.wait(5)
+
+			PlayerComponent.Internal:onPlayerLeft(playerInstance)
+		end)
+	end
+
+	function PlayerComponent.Interface:getPlayerSessionLength(playerInstance)
+		return os.clock() - PlayerComponent.PlayerClocks[playerInstance]
+	end
+
+	function PlayerComponent.Interface:getPlayerHash(playerInstance)
+		return PlayerComponent.PlayerHashes[playerInstance]
+	end
+
+	function PlayerComponent.Interface:removePlayerData(player)
+		PlayerComponent.PlayerSessions[PlayerComponent.PlayerHashes[player]] = nil
+		PlayerComponent.PlayerHashes[player] = nil
+		PlayerComponent.PlayerClocks[player] = nil
+	end
+
+	function PlayerComponent.Interface:start()
+		if not RunService:IsRunning() then
+			return
+		end
+
+		for _, playerInstance in Players:GetPlayers() do
+			task.defer(function()
+				PlayerComponent.Internal:onPlayerJoined(playerInstance)
+			end)
+		end
+
+		datalinkInstance._connections:Add(Players.PlayerAdded:Connect(function(...)
+			PlayerComponent.Internal:onPlayerJoined(...)
+		end))
+
+		datalinkInstance._connections:Add(Players.PlayerRemoving:Connect(function(...)
+			PlayerComponent.Internal:onPlayerLeft(...)
+		end))
+	end
+
+	return PlayerComponent.Interface
 end
-
-function PlayerComponent:init(SDK)
-	SessionParameters = require(SDK.Enums.SessionParameters)
-	EndpointType = require(SDK.Enums.EndpointType)
-
-	HttpComponent = SDK:_getComponent("HttpComponent")
-end
-
-return PlayerComponent

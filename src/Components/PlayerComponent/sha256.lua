@@ -14,46 +14,10 @@ local bit32_band = bit32.band
 local bit32_bxor = bit32.bxor
 
 local sha3_RC_lo, sha3_RC_hi = {}, {}
-local hi_factor_keccak, sh_reg = 0, 29
-
-local HEX64, lanes_index_base
-
-local TWO_POW_2 = 2 ^ 2
-local TWO_POW_3 = 2 ^ 3
-local TWO_POW_4 = 2 ^ 4
-local TWO_POW_5 = 2 ^ 5
-local TWO_POW_6 = 2 ^ 6
-local TWO_POW_7 = 2 ^ 7
-local TWO_POW_8 = 2 ^ 8
-local TWO_POW_9 = 2 ^ 9
-local TWO_POW_10 = 2 ^ 10
-local TWO_POW_11 = 2 ^ 11
-local TWO_POW_12 = 2 ^ 12
-local TWO_POW_13 = 2 ^ 13
-local TWO_POW_14 = 2 ^ 14
-local TWO_POW_15 = 2 ^ 15
-local TWO_POW_17 = 2 ^ 17
-local TWO_POW_18 = 2 ^ 18
-local TWO_POW_19 = 2 ^ 19
-local TWO_POW_20 = 2 ^ 20
-local TWO_POW_21 = 2 ^ 21
-local TWO_POW_22 = 2 ^ 22
-local TWO_POW_23 = 2 ^ 23
-local TWO_POW_24 = 2 ^ 24
-local TWO_POW_25 = 2 ^ 25
-local TWO_POW_26 = 2 ^ 26
-local TWO_POW_27 = 2 ^ 27
-local TWO_POW_28 = 2 ^ 28
-local TWO_POW_29 = 2 ^ 29
-local TWO_POW_30 = 2 ^ 30
-local TWO_POW_31 = 2 ^ 31
-local TWO_POW_32 = 2 ^ 32
 
 local function keccak_feed(lanes_lo, lanes_hi, str, offs, size, block_size_in_bytes)
-	-- This is an example of a Lua function having 79 local variables :-)
-	-- offs >= 0, size >= 0, size is multiple of block_size_in_bytes, block_size_in_bytes is positive multiple of 8
-	local RC_lo, RC_hi = sha3_RC_lo, sha3_RC_hi
 	local qwords_qty = block_size_in_bytes / 8
+
 	for pos = offs, offs + size - 1, block_size_in_bytes do
 		for j = 1, qwords_qty do
 			local a, b, c, d = string.byte(str, pos + 1, pos + 4)
@@ -77,8 +41,8 @@ local function keccak_feed(lanes_lo, lanes_hi, str, offs, size, block_size_in_by
 			local C5_lo = bit32_bxor(L05_lo, L10_lo, L15_lo, L20_lo, L25_lo)
 			local C5_hi = bit32_bxor(L05_hi, L10_hi, L15_hi, L20_hi, L25_hi)
 
-			local D_lo = bit32_bxor(C1_lo, C3_lo * 2 + (C3_hi % TWO_POW_32 - C3_hi % TWO_POW_31) / TWO_POW_31)
-			local D_hi = bit32_bxor(C1_hi, C3_hi * 2 + (C3_lo % TWO_POW_32 - C3_lo % TWO_POW_31) / TWO_POW_31)
+			local D_lo = bit32_bxor(C1_lo, C3_lo * 2 + (C3_hi % (2 ^ 32) - C3_hi % (2 ^ 31)) / (2 ^ 31))
+			local D_hi = bit32_bxor(C1_hi, C3_hi * 2 + (C3_lo % (2 ^ 32) - C3_lo % (2 ^ 31)) / (2 ^ 31))
 
 			local T0_lo = bit32_bxor(D_lo, L02_lo)
 			local T0_hi = bit32_bxor(D_hi, L02_hi)
@@ -91,19 +55,19 @@ local function keccak_feed(lanes_lo, lanes_hi, str, offs, size, block_size_in_by
 			local T4_lo = bit32_bxor(D_lo, L22_lo)
 			local T4_hi = bit32_bxor(D_hi, L22_hi)
 
-			L02_lo = (T1_lo % TWO_POW_32 - T1_lo % TWO_POW_20) / TWO_POW_20 + T1_hi * TWO_POW_12
-			L02_hi = (T1_hi % TWO_POW_32 - T1_hi % TWO_POW_20) / TWO_POW_20 + T1_lo * TWO_POW_12
-			L07_lo = (T3_lo % TWO_POW_32 - T3_lo % TWO_POW_19) / TWO_POW_19 + T3_hi * TWO_POW_13
-			L07_hi = (T3_hi % TWO_POW_32 - T3_hi % TWO_POW_19) / TWO_POW_19 + T3_lo * TWO_POW_13
-			L12_lo = T0_lo * 2 + (T0_hi % TWO_POW_32 - T0_hi % TWO_POW_31) / TWO_POW_31
-			L12_hi = T0_hi * 2 + (T0_lo % TWO_POW_32 - T0_lo % TWO_POW_31) / TWO_POW_31
-			L17_lo = T2_lo * TWO_POW_10 + (T2_hi % TWO_POW_32 - T2_hi % TWO_POW_22) / TWO_POW_22
-			L17_hi = T2_hi * TWO_POW_10 + (T2_lo % TWO_POW_32 - T2_lo % TWO_POW_22) / TWO_POW_22
-			L22_lo = T4_lo * TWO_POW_2 + (T4_hi % TWO_POW_32 - T4_hi % TWO_POW_30) / TWO_POW_30
-			L22_hi = T4_hi * TWO_POW_2 + (T4_lo % TWO_POW_32 - T4_lo % TWO_POW_30) / TWO_POW_30
+			L02_lo = (T1_lo % (2 ^ 32) - T1_lo % (2 ^ 20)) / (2 ^ 20) + T1_hi * (2 ^ 12)
+			L02_hi = (T1_hi % (2 ^ 32) - T1_hi % (2 ^ 20)) / (2 ^ 20) + T1_lo * (2 ^ 12)
+			L07_lo = (T3_lo % (2 ^ 32) - T3_lo % (2 ^ 19)) / (2 ^ 19) + T3_hi * (2 ^ 13)
+			L07_hi = (T3_hi % (2 ^ 32) - T3_hi % (2 ^ 19)) / (2 ^ 19) + T3_lo * (2 ^ 13)
+			L12_lo = T0_lo * 2 + (T0_hi % (2 ^ 32) - T0_hi % (2 ^ 31)) / (2 ^ 31)
+			L12_hi = T0_hi * 2 + (T0_lo % (2 ^ 32) - T0_lo % (2 ^ 31)) / (2 ^ 31)
+			L17_lo = T2_lo * (2 ^ 10) + (T2_hi % (2 ^ 32) - T2_hi % (2 ^ 22)) / (2 ^ 22)
+			L17_hi = T2_hi * (2 ^ 10) + (T2_lo % (2 ^ 32) - T2_lo % (2 ^ 22)) / (2 ^ 22)
+			L22_lo = T4_lo * (2 ^ 2) + (T4_hi % (2 ^ 32) - T4_hi % (2 ^ 30)) / (2 ^ 30)
+			L22_hi = T4_hi * (2 ^ 2) + (T4_lo % (2 ^ 32) - T4_lo % (2 ^ 30)) / (2 ^ 30)
 
-			D_lo = bit32_bxor(C2_lo, C4_lo * 2 + (C4_hi % TWO_POW_32 - C4_hi % TWO_POW_31) / TWO_POW_31)
-			D_hi = bit32_bxor(C2_hi, C4_hi * 2 + (C4_lo % TWO_POW_32 - C4_lo % TWO_POW_31) / TWO_POW_31)
+			D_lo = bit32_bxor(C2_lo, C4_lo * 2 + (C4_hi % (2 ^ 32) - C4_hi % (2 ^ 31)) / (2 ^ 31))
+			D_hi = bit32_bxor(C2_hi, C4_hi * 2 + (C4_lo % (2 ^ 32) - C4_lo % (2 ^ 31)) / (2 ^ 31))
 
 			T0_lo = bit32_bxor(D_lo, L03_lo)
 			T0_hi = bit32_bxor(D_hi, L03_hi)
@@ -116,19 +80,19 @@ local function keccak_feed(lanes_lo, lanes_hi, str, offs, size, block_size_in_by
 			T4_lo = bit32_bxor(D_lo, L23_lo)
 			T4_hi = bit32_bxor(D_hi, L23_hi)
 
-			L03_lo = (T2_lo % TWO_POW_32 - T2_lo % TWO_POW_21) / TWO_POW_21 + T2_hi * TWO_POW_11
-			L03_hi = (T2_hi % TWO_POW_32 - T2_hi % TWO_POW_21) / TWO_POW_21 + T2_lo * TWO_POW_11
-			L08_lo = (T4_lo % TWO_POW_32 - T4_lo % TWO_POW_3) / TWO_POW_3 + T4_hi * TWO_POW_29 % TWO_POW_32
-			L08_hi = (T4_hi % TWO_POW_32 - T4_hi % TWO_POW_3) / TWO_POW_3 + T4_lo * TWO_POW_29 % TWO_POW_32
-			L13_lo = T1_lo * TWO_POW_6 + (T1_hi % TWO_POW_32 - T1_hi % TWO_POW_26) / TWO_POW_26
-			L13_hi = T1_hi * TWO_POW_6 + (T1_lo % TWO_POW_32 - T1_lo % TWO_POW_26) / TWO_POW_26
-			L18_lo = T3_lo * TWO_POW_15 + (T3_hi % TWO_POW_32 - T3_hi % TWO_POW_17) / TWO_POW_17
-			L18_hi = T3_hi * TWO_POW_15 + (T3_lo % TWO_POW_32 - T3_lo % TWO_POW_17) / TWO_POW_17
-			L23_lo = (T0_lo % TWO_POW_32 - T0_lo % TWO_POW_2) / TWO_POW_2 + T0_hi * TWO_POW_30 % TWO_POW_32
-			L23_hi = (T0_hi % TWO_POW_32 - T0_hi % TWO_POW_2) / TWO_POW_2 + T0_lo * TWO_POW_30 % TWO_POW_32
+			L03_lo = (T2_lo % (2 ^ 32) - T2_lo % (2 ^ 21)) / (2 ^ 21) + T2_hi * (2 ^ 11)
+			L03_hi = (T2_hi % (2 ^ 32) - T2_hi % (2 ^ 21)) / (2 ^ 21) + T2_lo * (2 ^ 11)
+			L08_lo = (T4_lo % (2 ^ 32) - T4_lo % (2 ^ 3)) / (2 ^ 3) + T4_hi * (2 ^ 29) % (2 ^ 32)
+			L08_hi = (T4_hi % (2 ^ 32) - T4_hi % (2 ^ 3)) / (2 ^ 3) + T4_lo * (2 ^ 29) % (2 ^ 32)
+			L13_lo = T1_lo * (2 ^ 6) + (T1_hi % (2 ^ 32) - T1_hi % (2 ^ 26)) / (2 ^ 26)
+			L13_hi = T1_hi * (2 ^ 6) + (T1_lo % (2 ^ 32) - T1_lo % (2 ^ 26)) / (2 ^ 26)
+			L18_lo = T3_lo * (2 ^ 15) + (T3_hi % (2 ^ 32) - T3_hi % (2 ^ 17)) / (2 ^ 17)
+			L18_hi = T3_hi * (2 ^ 15) + (T3_lo % (2 ^ 32) - T3_lo % (2 ^ 17)) / (2 ^ 17)
+			L23_lo = (T0_lo % (2 ^ 32) - T0_lo % (2 ^ 2)) / (2 ^ 2) + T0_hi * (2 ^ 30) % (2 ^ 32)
+			L23_hi = (T0_hi % (2 ^ 32) - T0_hi % (2 ^ 2)) / (2 ^ 2) + T0_lo * (2 ^ 30) % (2 ^ 32)
 
-			D_lo = bit32_bxor(C3_lo, C5_lo * 2 + (C5_hi % TWO_POW_32 - C5_hi % TWO_POW_31) / TWO_POW_31)
-			D_hi = bit32_bxor(C3_hi, C5_hi * 2 + (C5_lo % TWO_POW_32 - C5_lo % TWO_POW_31) / TWO_POW_31)
+			D_lo = bit32_bxor(C3_lo, C5_lo * 2 + (C5_hi % (2 ^ 32) - C5_hi % (2 ^ 31)) / (2 ^ 31))
+			D_hi = bit32_bxor(C3_hi, C5_hi * 2 + (C5_lo % (2 ^ 32) - C5_lo % (2 ^ 31)) / (2 ^ 31))
 
 			T0_lo = bit32_bxor(D_lo, L04_lo)
 			T0_hi = bit32_bxor(D_hi, L04_hi)
@@ -141,19 +105,19 @@ local function keccak_feed(lanes_lo, lanes_hi, str, offs, size, block_size_in_by
 			T4_lo = bit32_bxor(D_lo, L24_lo)
 			T4_hi = bit32_bxor(D_hi, L24_hi)
 
-			L04_lo = T3_lo * TWO_POW_21 % TWO_POW_32 + (T3_hi % TWO_POW_32 - T3_hi % TWO_POW_11) / TWO_POW_11
-			L04_hi = T3_hi * TWO_POW_21 % TWO_POW_32 + (T3_lo % TWO_POW_32 - T3_lo % TWO_POW_11) / TWO_POW_11
-			L09_lo = T0_lo * TWO_POW_28 % TWO_POW_32 + (T0_hi % TWO_POW_32 - T0_hi % TWO_POW_4) / TWO_POW_4
-			L09_hi = T0_hi * TWO_POW_28 % TWO_POW_32 + (T0_lo % TWO_POW_32 - T0_lo % TWO_POW_4) / TWO_POW_4
-			L14_lo = T2_lo * TWO_POW_25 % TWO_POW_32 + (T2_hi % TWO_POW_32 - T2_hi % TWO_POW_7) / TWO_POW_7
-			L14_hi = T2_hi * TWO_POW_25 % TWO_POW_32 + (T2_lo % TWO_POW_32 - T2_lo % TWO_POW_7) / TWO_POW_7
-			L19_lo = (T4_lo % TWO_POW_32 - T4_lo % TWO_POW_8) / TWO_POW_8 + T4_hi * TWO_POW_24 % TWO_POW_32
-			L19_hi = (T4_hi % TWO_POW_32 - T4_hi % TWO_POW_8) / TWO_POW_8 + T4_lo * TWO_POW_24 % TWO_POW_32
-			L24_lo = (T1_lo % TWO_POW_32 - T1_lo % TWO_POW_9) / TWO_POW_9 + T1_hi * TWO_POW_23 % TWO_POW_32
-			L24_hi = (T1_hi % TWO_POW_32 - T1_hi % TWO_POW_9) / TWO_POW_9 + T1_lo * TWO_POW_23 % TWO_POW_32
+			L04_lo = T3_lo * (2 ^ 21) % (2 ^ 32) + (T3_hi % (2 ^ 32) - T3_hi % (2 ^ 11)) / (2 ^ 11)
+			L04_hi = T3_hi * (2 ^ 21) % (2 ^ 32) + (T3_lo % (2 ^ 32) - T3_lo % (2 ^ 11)) / (2 ^ 11)
+			L09_lo = T0_lo * (2 ^ 28) % (2 ^ 32) + (T0_hi % (2 ^ 32) - T0_hi % (2 ^ 4)) / (2 ^ 4)
+			L09_hi = T0_hi * (2 ^ 28) % (2 ^ 32) + (T0_lo % (2 ^ 32) - T0_lo % (2 ^ 4)) / (2 ^ 4)
+			L14_lo = T2_lo * (2 ^ 25) % (2 ^ 32) + (T2_hi % (2 ^ 32) - T2_hi % (2 ^ 7)) / (2 ^ 7)
+			L14_hi = T2_hi * (2 ^ 25) % (2 ^ 32) + (T2_lo % (2 ^ 32) - T2_lo % (2 ^ 7)) / (2 ^ 7)
+			L19_lo = (T4_lo % (2 ^ 32) - T4_lo % (2 ^ 8)) / (2 ^ 8) + T4_hi * (2 ^ 24) % (2 ^ 32)
+			L19_hi = (T4_hi % (2 ^ 32) - T4_hi % (2 ^ 8)) / (2 ^ 8) + T4_lo * (2 ^ 24) % (2 ^ 32)
+			L24_lo = (T1_lo % (2 ^ 32) - T1_lo % (2 ^ 9)) / (2 ^ 9) + T1_hi * (2 ^ 23) % (2 ^ 32)
+			L24_hi = (T1_hi % (2 ^ 32) - T1_hi % (2 ^ 9)) / (2 ^ 9) + T1_lo * (2 ^ 23) % (2 ^ 32)
 
-			D_lo = bit32_bxor(C4_lo, C1_lo * 2 + (C1_hi % TWO_POW_32 - C1_hi % TWO_POW_31) / TWO_POW_31)
-			D_hi = bit32_bxor(C4_hi, C1_hi * 2 + (C1_lo % TWO_POW_32 - C1_lo % TWO_POW_31) / TWO_POW_31)
+			D_lo = bit32_bxor(C4_lo, C1_lo * 2 + (C1_hi % (2 ^ 32) - C1_hi % (2 ^ 31)) / (2 ^ 31))
+			D_hi = bit32_bxor(C4_hi, C1_hi * 2 + (C1_lo % (2 ^ 32) - C1_lo % (2 ^ 31)) / (2 ^ 31))
 
 			T0_lo = bit32_bxor(D_lo, L05_lo)
 			T0_hi = bit32_bxor(D_hi, L05_hi)
@@ -166,19 +130,19 @@ local function keccak_feed(lanes_lo, lanes_hi, str, offs, size, block_size_in_by
 			T4_lo = bit32_bxor(D_lo, L25_lo)
 			T4_hi = bit32_bxor(D_hi, L25_hi)
 
-			L05_lo = T4_lo * TWO_POW_14 + (T4_hi % TWO_POW_32 - T4_hi % TWO_POW_18) / TWO_POW_18
-			L05_hi = T4_hi * TWO_POW_14 + (T4_lo % TWO_POW_32 - T4_lo % TWO_POW_18) / TWO_POW_18
-			L10_lo = T1_lo * TWO_POW_20 % TWO_POW_32 + (T1_hi % TWO_POW_32 - T1_hi % TWO_POW_12) / TWO_POW_12
-			L10_hi = T1_hi * TWO_POW_20 % TWO_POW_32 + (T1_lo % TWO_POW_32 - T1_lo % TWO_POW_12) / TWO_POW_12
-			L15_lo = T3_lo * TWO_POW_8 + (T3_hi % TWO_POW_32 - T3_hi % TWO_POW_24) / TWO_POW_24
-			L15_hi = T3_hi * TWO_POW_8 + (T3_lo % TWO_POW_32 - T3_lo % TWO_POW_24) / TWO_POW_24
-			L20_lo = T0_lo * TWO_POW_27 % TWO_POW_32 + (T0_hi % TWO_POW_32 - T0_hi % TWO_POW_5) / TWO_POW_5
-			L20_hi = T0_hi * TWO_POW_27 % TWO_POW_32 + (T0_lo % TWO_POW_32 - T0_lo % TWO_POW_5) / TWO_POW_5
-			L25_lo = (T2_lo % TWO_POW_32 - T2_lo % TWO_POW_25) / TWO_POW_25 + T2_hi * TWO_POW_7
-			L25_hi = (T2_hi % TWO_POW_32 - T2_hi % TWO_POW_25) / TWO_POW_25 + T2_lo * TWO_POW_7
+			L05_lo = T4_lo * (2 ^ 14) + (T4_hi % (2 ^ 32) - T4_hi % (2 ^ 18)) / (2 ^ 18)
+			L05_hi = T4_hi * (2 ^ 14) + (T4_lo % (2 ^ 32) - T4_lo % (2 ^ 18)) / (2 ^ 18)
+			L10_lo = T1_lo * (2 ^ 20) % (2 ^ 32) + (T1_hi % (2 ^ 32) - T1_hi % (2 ^ 12)) / (2 ^ 12)
+			L10_hi = T1_hi * (2 ^ 20) % (2 ^ 32) + (T1_lo % (2 ^ 32) - T1_lo % (2 ^ 12)) / (2 ^ 12)
+			L15_lo = T3_lo * (2 ^ 8) + (T3_hi % (2 ^ 32) - T3_hi % (2 ^ 24)) / (2 ^ 24)
+			L15_hi = T3_hi * (2 ^ 8) + (T3_lo % (2 ^ 32) - T3_lo % (2 ^ 24)) / (2 ^ 24)
+			L20_lo = T0_lo * (2 ^ 27) % (2 ^ 32) + (T0_hi % (2 ^ 32) - T0_hi % (2 ^ 5)) / (2 ^ 5)
+			L20_hi = T0_hi * (2 ^ 27) % (2 ^ 32) + (T0_lo % (2 ^ 32) - T0_lo % (2 ^ 5)) / (2 ^ 5)
+			L25_lo = (T2_lo % (2 ^ 32) - T2_lo % (2 ^ 25)) / (2 ^ 25) + T2_hi * (2 ^ 7)
+			L25_hi = (T2_hi % (2 ^ 32) - T2_hi % (2 ^ 25)) / (2 ^ 25) + T2_lo * (2 ^ 7)
 
-			D_lo = bit32_bxor(C5_lo, C2_lo * 2 + (C2_hi % TWO_POW_32 - C2_hi % TWO_POW_31) / TWO_POW_31)
-			D_hi = bit32_bxor(C5_hi, C2_hi * 2 + (C2_lo % TWO_POW_32 - C2_lo % TWO_POW_31) / TWO_POW_31)
+			D_lo = bit32_bxor(C5_lo, C2_lo * 2 + (C2_hi % (2 ^ 32) - C2_hi % (2 ^ 31)) / (2 ^ 31))
+			D_hi = bit32_bxor(C5_hi, C2_hi * 2 + (C2_lo % (2 ^ 32) - C2_lo % (2 ^ 31)) / (2 ^ 31))
 
 			T1_lo = bit32_bxor(D_lo, L06_lo)
 			T1_hi = bit32_bxor(D_hi, L06_hi)
@@ -189,14 +153,14 @@ local function keccak_feed(lanes_lo, lanes_hi, str, offs, size, block_size_in_by
 			T4_lo = bit32_bxor(D_lo, L21_lo)
 			T4_hi = bit32_bxor(D_hi, L21_hi)
 
-			L06_lo = T2_lo * TWO_POW_3 + (T2_hi % TWO_POW_32 - T2_hi % TWO_POW_29) / TWO_POW_29
-			L06_hi = T2_hi * TWO_POW_3 + (T2_lo % TWO_POW_32 - T2_lo % TWO_POW_29) / TWO_POW_29
-			L11_lo = T4_lo * TWO_POW_18 + (T4_hi % TWO_POW_32 - T4_hi % TWO_POW_14) / TWO_POW_14
-			L11_hi = T4_hi * TWO_POW_18 + (T4_lo % TWO_POW_32 - T4_lo % TWO_POW_14) / TWO_POW_14
-			L16_lo = (T1_lo % TWO_POW_32 - T1_lo % TWO_POW_28) / TWO_POW_28 + T1_hi * TWO_POW_4
-			L16_hi = (T1_hi % TWO_POW_32 - T1_hi % TWO_POW_28) / TWO_POW_28 + T1_lo * TWO_POW_4
-			L21_lo = (T3_lo % TWO_POW_32 - T3_lo % TWO_POW_23) / TWO_POW_23 + T3_hi * TWO_POW_9
-			L21_hi = (T3_hi % TWO_POW_32 - T3_hi % TWO_POW_23) / TWO_POW_23 + T3_lo * TWO_POW_9
+			L06_lo = T2_lo * (2 ^ 3) + (T2_hi % (2 ^ 32) - T2_hi % (2 ^ 29)) / (2 ^ 29)
+			L06_hi = T2_hi * (2 ^ 3) + (T2_lo % (2 ^ 32) - T2_lo % (2 ^ 29)) / (2 ^ 29)
+			L11_lo = T4_lo * (2 ^ 18) + (T4_hi % (2 ^ 32) - T4_hi % (2 ^ 14)) / (2 ^ 14)
+			L11_hi = T4_hi * (2 ^ 18) + (T4_lo % (2 ^ 32) - T4_lo % (2 ^ 14)) / (2 ^ 14)
+			L16_lo = (T1_lo % (2 ^ 32) - T1_lo % (2 ^ 28)) / (2 ^ 28) + T1_hi * (2 ^ 4)
+			L16_hi = (T1_hi % (2 ^ 32) - T1_hi % (2 ^ 28)) / (2 ^ 28) + T1_lo * (2 ^ 4)
+			L21_lo = (T3_lo % (2 ^ 32) - T3_lo % (2 ^ 23)) / (2 ^ 23) + T3_hi * (2 ^ 9)
+			L21_hi = (T3_hi % (2 ^ 32) - T3_hi % (2 ^ 23)) / (2 ^ 23) + T3_lo * (2 ^ 9)
 
 			L01_lo = bit32_bxor(D_lo, L01_lo)
 			L01_hi = bit32_bxor(D_hi, L01_hi)
@@ -210,8 +174,8 @@ local function keccak_feed(lanes_lo, lanes_hi, str, offs, size, block_size_in_by
 			L16_hi, L17_hi, L18_hi, L19_hi, L20_hi = bit32_bxor(L20_hi, bit32_band(-1 - L16_hi, L17_hi)), bit32_bxor(L16_hi, bit32_band(-1 - L17_hi, L18_hi)), bit32_bxor(L17_hi, bit32_band(-1 - L18_hi, L19_hi)), bit32_bxor(L18_hi, bit32_band(-1 - L19_hi, L20_hi)), bit32_bxor(L19_hi, bit32_band(-1 - L20_hi, L16_hi))
 			L21_lo, L22_lo, L23_lo, L24_lo, L25_lo = bit32_bxor(L23_lo, bit32_band(-1 - L24_lo, L25_lo)), bit32_bxor(L24_lo, bit32_band(-1 - L25_lo, L21_lo)), bit32_bxor(L25_lo, bit32_band(-1 - L21_lo, L22_lo)), bit32_bxor(L21_lo, bit32_band(-1 - L22_lo, L23_lo)), bit32_bxor(L22_lo, bit32_band(-1 - L23_lo, L24_lo))
 			L21_hi, L22_hi, L23_hi, L24_hi, L25_hi = bit32_bxor(L23_hi, bit32_band(-1 - L24_hi, L25_hi)), bit32_bxor(L24_hi, bit32_band(-1 - L25_hi, L21_hi)), bit32_bxor(L25_hi, bit32_band(-1 - L21_hi, L22_hi)), bit32_bxor(L21_hi, bit32_band(-1 - L22_hi, L23_hi)), bit32_bxor(L22_hi, bit32_band(-1 - L23_hi, L24_hi))
-			L01_lo = bit32_bxor(L01_lo, RC_lo[round_idx])
-			L01_hi = L01_hi + RC_hi[round_idx] -- RC_hi[] is either 0 or 0x80000000, so we could use fast addition instead of slow XOR
+			L01_lo = bit32_bxor(L01_lo, sha3_RC_lo[round_idx])
+			L01_hi = L01_hi + sha3_RC_hi[round_idx]
 		end
 
 		lanes_lo[1] = L01_lo
@@ -272,7 +236,7 @@ local function keccak(block_size_in_bytes, digest_size_in_bytes, is_SHAKE, messa
 		error("Argument 'digest_size_in_bytes' must be a number", 2)
 	end
 
-	local tail, lanes_lo, lanes_hi = "", table.create(25, 0), hi_factor_keccak == 0 and table.create(25, 0)
+	local tail, lanes_lo, lanes_hi = "", table.create(25, 0), table.create(25, 0)
 	local result
 
 	local function partial(message_part)
@@ -312,14 +276,8 @@ local function keccak(block_size_in_bytes, digest_size_in_bytes, is_SHAKE, messa
 					end
 
 					qwords_qty = math.floor(math.min(qwords_qty, total_lanes - lanes_used))
-					if hi_factor_keccak ~= 0 then
-						for j = 1, qwords_qty do
-							qwords[j] = HEX64(lanes_lo[lanes_used + j - 1 + lanes_index_base])
-						end
-					else
-						for j = 1, qwords_qty do
-							qwords[j] = string.format("%08x", lanes_hi[lanes_used + j] % 4294967296) .. string.format("%08x", lanes_lo[lanes_used + j] % 4294967296)
-						end
+					for j = 1, qwords_qty do
+						qwords[j] = string.format("%08x", lanes_hi[lanes_used + j] % 4294967296) .. string.format("%08x", lanes_lo[lanes_used + j] % 4294967296)
 					end
 
 					lanes_used = lanes_used + qwords_qty
@@ -384,6 +342,8 @@ local function keccak(block_size_in_bytes, digest_size_in_bytes, is_SHAKE, messa
 end
 
 do
+	local sh_reg = 29
+
 	local function next_bit()
 		local r = sh_reg % 2
 		sh_reg = bit32_bxor((sh_reg - r) / 2, 142 * r)
@@ -398,10 +358,10 @@ do
 		end
 
 		local hi = next_bit() * m
-		sha3_RC_hi[idx], sha3_RC_lo[idx] = hi, lo + hi * hi_factor_keccak
+		sha3_RC_hi[idx], sha3_RC_lo[idx] = hi, lo + hi
 	end
 end
 
 return function(message)
 	return keccak((1600 - 2 * 256) / 8, 256 / 8, false, message)
-end;
+end

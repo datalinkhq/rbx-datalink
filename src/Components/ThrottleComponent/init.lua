@@ -1,61 +1,64 @@
-local ThrottleComponent = { }
+return function(datalinkInstance)
+	local ThrottleLimitType = require(datalinkInstance.Enums.ThrottleLimitType)
+	local ThrottleLimits = require(datalinkInstance.Data.ThrottleLimits)
 
-local ThrottleLimitType, ThrottleLimits
-local ThrottleSignal
+	local ThrottleSignal = datalinkInstance.onThrottled
 
-function ThrottleComponent:isThrottled()
-	return self:getThrottleRatio() >= 1
-end
+	local ThrottleComponent = { }
 
-function ThrottleComponent:getThrottleRatio()
-	return self._throttleIndex / (ThrottleLimits[ThrottleLimitType.GameServerMaxOutboundRequests] / ThrottleLimits[ThrottleLimitType.GameServerOutboundRequestUsage])
-end
+	ThrottleComponent.Interface = { }
 
-function ThrottleComponent:increment()
-	self._throttleIndex += 1
+	ThrottleComponent.throttleLimit = ThrottleLimits[ThrottleLimitType.GameServerMaxOutboundRequests]
+	ThrottleComponent.throttleIndex = 0
 
-	task.delay(ThrottleLimits[ThrottleLimitType.GameServerThrottleIncrementTimeout], function()
-		if self._throttleIndex - 1 < 0 then
-			return
-		end
+	ThrottleComponent.thottleTimestamp = os.clock()
+	ThrottleComponent.isThrottled = false
 
-		self._throttleIndex -= 1
-	end)
-end
-
-function ThrottleComponent:throttleRequests(seconds)
-	local markedTime = os.clock()
-
-	self._isThrottled = true
-	self._throttledTimestamp = markedTime
-
-	if not seconds then
-		return
+	function ThrottleComponent.Interface:isThrottled()
+		return ThrottleComponent.Interface:getThrottleRatio() >= 1
 	end
 
-	ThrottleSignal:Fire(self._isThrottled)
-	task.delay(seconds, function()
-		if self._throttledTimestamp ~= markedTime or not self._isThrottled then
+	function ThrottleComponent.Interface:getThrottleRatio()
+		return ThrottleComponent.throttleIndex / (ThrottleLimits[ThrottleLimitType.GameServerMaxOutboundRequests] / ThrottleLimits[ThrottleLimitType.GameServerOutboundRequestUsage])
+	end
+
+	function ThrottleComponent.Interface:increment()
+		ThrottleComponent.throttleIndex += 1
+
+		task.delay(ThrottleLimits[ThrottleLimitType.GameServerThrottleIncrementTimeout], function()
+			if ThrottleComponent.throttleIndex - 1 < 0 then
+				return
+			end
+
+			ThrottleComponent.throttleIndex -= 1
+		end)
+	end
+
+	function ThrottleComponent.Interface:throttleRequests(seconds)
+		local markedTime = os.clock()
+
+		ThrottleComponent.isThrottled = true
+		ThrottleComponent.thottleTimestamp = markedTime
+
+		if not seconds then
 			return
 		end
 
-		self._isThrottled = false
-		ThrottleSignal:Fire(self._isThrottled)
-	end)
+		ThrottleSignal:Fire(ThrottleComponent.isThrottled)
+		task.delay(seconds, function()
+			if ThrottleComponent.thottleTimestamp ~= markedTime or not ThrottleComponent.isThrottled then
+				return
+			end
+
+			ThrottleComponent.isThrottled = false
+			ThrottleSignal:Fire(ThrottleComponent.isThrottled)
+		end)
+	end
+
+	function ThrottleComponent.Interface:setThrottleLimit(limit)
+		ThrottleComponent.throttleLimit = limit
+		ThrottleComponent.throttleIndex = 0
+	end
+
+	return ThrottleComponent.Interface
 end
-
-function ThrottleComponent:setThrottleLimit(limit)
-	self._throttleLimit = limit
-	self._throttleIndex = 0
-end
-
-function ThrottleComponent:init(SDK)
-	ThrottleLimitType = require(SDK.Enums.ThrottleLimitType)
-	ThrottleLimits = require(SDK.Data.ThrottleLimits)
-
-	ThrottleSignal = SDK.onThrottled
-
-	self:setThrottleLimit(ThrottleLimits[ThrottleLimitType.GameServerMaxOutboundRequests])
-end
-
-return ThrottleComponent

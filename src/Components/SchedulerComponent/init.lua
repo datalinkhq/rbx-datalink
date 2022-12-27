@@ -1,86 +1,90 @@
 local DAEMON_SCHEDULER_NAME = "InternalScheduler"
 
-local Sift, Promise
+return function(datalinkInstance)
+	local Promise = require(datalinkInstance.Submodules.Promise)
+	local Sift = require(datalinkInstance.Submodules.Sift)
 
-local DaemonComponent
-local SchedulerComponent = {
-	_taskList = { },
-	_processingTasks = false
-}
+	local DaemonComponent = datalinkInstance.Internal:getComponent("DaemonComponent")
 
-function SchedulerComponent:_createDaemonCallback()
-	return function()
-		while true do
-			self._processingTasks = true
+	local SchedulerComponent = { }
 
-			if #self._taskList <= 0 then
-				self._processingTasks = false
+	SchedulerComponent.ProcessingTasks = false
+	SchedulerComponent.TaskList = { }
 
-				coroutine.yield()
+	SchedulerComponent.Interface = { }
+	SchedulerComponent.Internal = { }
 
+	function SchedulerComponent.Internal:createDaemonCallback()
+		return function()
+			while true do
+				SchedulerComponent.ProcessingTasks = true
+
+				if #SchedulerComponent.TaskList <= 0 then
+					SchedulerComponent.ProcessingTasks = false
+
+					coroutine.yield()
+
+					continue
+				end
+
+				self:executeTask(1)
+			end
+		end
+	end
+
+	function SchedulerComponent.Interface:addTaskAsync(callback, priority, taskIndex)
+		return Promise.new(function(resolve, reject)
+			local internalTaskIndex = (priority and 1) or #SchedulerComponent.TaskList
+			local taskObject = {
+				reject = reject,
+				resolve = resolve,
+				callback = callback,
+				index = taskIndex or internalTaskIndex
+			}
+
+			SchedulerComponent.TaskList = Sift.Array.insert(SchedulerComponent.TaskList, internalTaskIndex, taskObject)
+
+			if not SchedulerComponent.ProcessingTasks then
+				DaemonComponent:resumeDaemon(DAEMON_SCHEDULER_NAME)
+			end
+		end)
+	end
+
+	function SchedulerComponent.Interface:removeTask(targetTaskIndex)
+		for taskIndex in SchedulerComponent.TaskList do
+			local taskObject = SchedulerComponent.TaskList[taskIndex]
+
+			if taskObject.index ~= targetTaskIndex then
 				continue
 			end
 
-			self:executeTask(1)
+			table.remove(SchedulerComponent.TaskList, taskIndex)
 		end
 	end
-end
 
-function SchedulerComponent:addTaskAsync(callback, priority, taskIndex)
-	return Promise.new(function(resolve, reject)
-		local internalTaskIndex = (priority and 1) or #self._taskList
-		local taskObject = {
-			reject = reject,
-			resolve = resolve,
-			callback = callback,
-			index = taskIndex or internalTaskIndex
-		}
+	function SchedulerComponent.Interface:executeTask(targetTaskIndex)
+		local taskObject = table.remove(SchedulerComponent.TaskList, targetTaskIndex)
+		local taskResolve, taskSuccess = { }, false
 
-		self._taskList = Sift.Array.insert(self._taskList, internalTaskIndex, taskObject)
+		if taskObject.callback then
+			taskResolve = { pcall(taskObject.callback) }
+			taskSuccess = table.remove(taskResolve, 1)
 
-		if not self._processingTasks then
-			DaemonComponent:resumeDaemon(DAEMON_SCHEDULER_NAME)
-		end
-	end)
-end
-
-function SchedulerComponent:removeTask(targetTaskIndex)
-	for taskIndex in self._taskList do
-		local taskObject = self._taskList[taskIndex]
-
-		if taskObject.index ~= targetTaskIndex then
-			continue
-		end
-
-		table.remove(self._taskList, taskIndex)
-	end
-end
-
-function SchedulerComponent:executeTask(targetTaskIndex)
-	local taskObject = table.remove(self._taskList, targetTaskIndex)
-	local taskResolve, taskSuccess = { }, false
-
-	if taskObject.callback then
-		taskResolve = { pcall(taskObject.callback) }
-		taskSuccess = table.remove(taskResolve, 1)
-
-		if taskObject.resolve and taskSuccess then
-			taskObject.resolve(table.unpack(taskResolve))
-		elseif taskObject.reject and not taskSuccess then
-			taskObject.reject(table.unpack(taskResolve))
+			if taskObject.resolve and taskSuccess then
+				taskObject.resolve(table.unpack(taskResolve))
+			elseif taskObject.reject and not taskSuccess then
+				taskObject.reject(table.unpack(taskResolve))
+			end
 		end
 	end
+
+	function SchedulerComponent.Interface:start()
+		DaemonComponent:addDaemon(
+			SchedulerComponent.Internal:createDaemonCallback(),
+			DAEMON_SCHEDULER_NAME,
+			true
+		)
+	end
+
+	return SchedulerComponent.Interface
 end
-
-function SchedulerComponent:start()
-	DaemonComponent:addDaemon(self:_createDaemonCallback(), DAEMON_SCHEDULER_NAME, true)
-end
-
-function SchedulerComponent:init(SDK)
-	Promise = require(SDK.Submodules.Promise)
-	Sift = require(SDK.Submodules.Sift)
-
-	DaemonComponent = SDK:_getComponent("DaemonComponent")
-end
-
-return SchedulerComponent
