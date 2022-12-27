@@ -3,7 +3,7 @@
 Module was originally written by Egor Skriptunoff and distributed under an MIT license.
 It can be found here: https://github.com/Egor-Skriptunoff/pure_lua_SHA/blob/master/sha2.lua
 
-Changelog;
+Changelog:
 	- Boatbomber: Roblox LuaU port
 	- HowManySmall: LuaU Optimizations
 	- Datalink: Reduction in method scope
