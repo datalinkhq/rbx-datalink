@@ -1,26 +1,26 @@
 name: Selene Linter
 
 on:
-	push:
-		branches: [ "main", "development", "feature/*", "bugfix/*" ]
-	pull_request:
-		branches: [ "main", "development", "feature/*", "bugfix/*" ]
+  push:
+    branches: [ "main", "development", "feature/*", "bugfix/*" ]
+  pull_request:
+    branches: [ "main", "development", "feature/*", "bugfix/*" ]
 
 jobs:
-	generate:
-		runs-on: ubuntu-latest
-		steps:
-		- name: Checkout code
-			uses: actions/checkout@v1
-		- name: Setup Foreman toolchain
-			uses: Roblox/setup-foreman@v1
-			with:
-				version: "^1.0.0"
-				token: ${{ secrets.GITHUB_TOKEN }}
-		- name: Generate Standard Library
-			run: selene generate-roblox-std
-		- name: Remove Submodules
-			run: rm -r submodules
-		- name: Run Selene
-			run: |- 
-				selene source
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v1
+    - name: Setup Foreman toolchain
+      uses: Roblox/setup-foreman@v1
+      with:
+        version: "^1.0.0"
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Generate Standard Library
+      run: selene generate-roblox-std
+    - name: Remove Submodules
+      run: rm -r submodules
+    - name: Run Selene
+      run: |- 
+        selene source
