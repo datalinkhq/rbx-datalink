@@ -1,8 +1,14 @@
 local ServerStorage = game:GetService("ServerStorage")
+
+if not ServerStorage:FindFirstChild("Secrets") then
+	return error("Failed to execute 'Datalink SDK' tests: Invalid 'Secrets' module under 'ServerStorage'")
+end
+
+local Secrets = require(ServerStorage.Secrets)
 local TestEZ = require(script.TestEZ)
 
-_G.DATALINK_DEVELOPER_ACCOUNT_ID = 3
-_G.DATALINK_DEVELOPER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoiMzhiYzk2ZGYtODQ4Mi00NGFlLTg3MDMtMWNiMGFkZDJiNzk5IiwiaWF0IjoxNjcwMTkzODE3fQ.efzw5tHOZBrTmfJeAjuuhELHI6z2F7GR8w7y8SXB1v8"
+_G.DATALINK_DEVELOPER_ACCOUNT_ID = Secrets.DATALINK_DEVELOPER_ACCOUNT_ID
+_G.DATALINK_DEVELOPER_TOKEN = Secrets.DATALINK_DEVELOPER_TOKEN
 
 TestEZ.TestBootstrap:run({
 	ServerStorage.DatalinkSDK.Interfaces,
