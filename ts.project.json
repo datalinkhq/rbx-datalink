@@ -1,0 +1,9 @@
+{
+	"name": "Datalink-SDK_TS",
+	"tree": {
+		"$className": "DataModel",
+
+		"ServerStorage": { "$className": "ServerStorage", "DatalinkService": { "$path": "out" }  },
+		"ServerScriptService": { "$className": "ServerScriptService", "DataLink-Tests": { "$path": "tests" } }
+	}
+}
