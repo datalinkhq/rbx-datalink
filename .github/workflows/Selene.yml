@@ -2,10 +2,9 @@ name: Selene Linter
 
 on:
 	push:
+		branches: [ "main", "development", "feature/*", "bugfix/*" ]
 	pull_request:
-		branches:
-		- main
-		- development
+		branches: [ "main", "development", "feature/*", "bugfix/*" ]
 
 jobs:
 	generate:
