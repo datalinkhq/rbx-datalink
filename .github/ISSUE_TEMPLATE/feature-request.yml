@@ -1,0 +1,43 @@
+name: Feature Request
+description: File an issue for requesting a new feature or implementation. 
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: input
+    id: contact
+    attributes:
+      label: Contact details
+      description: Please provide us a way to reach you for more information. 
+      placeholder: me@example.com
+    validations:
+      required: false
+  - type: textarea
+    id: details
+    attributes:
+      label: Feature details
+      description: What is the main idea of this feature?
+      placeholder: It would be really cool to have...
+    validations:
+      required: true
+  - type: dropdown
+    id: existing
+    attributes:
+      label: Existing feature
+      description: Is this an extension to an existing feature?
+      options:
+        - Experience State Management
+        - Experience Health Management
+        - Data Management
+        - Fast/Feature Flags
+        - DataStore, MemoryStore & MessagingService wrappers
+        - Game Event Controllers
+    validations:
+      required: false
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/datalinkhq/rbx-datalink/blob/main/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
