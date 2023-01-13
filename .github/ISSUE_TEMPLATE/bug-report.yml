@@ -1,4 +1,4 @@
-name: 🐛 Bug Report
+name: Bug Report
 description: File an issue regarding unintended behavior. 
 title: "[bug] "
 labels: ["bug", "triage"]
