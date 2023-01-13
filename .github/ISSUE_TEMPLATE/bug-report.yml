@@ -8,7 +8,7 @@ body:
     attributes:
       label: Unexpected behavior
       description: Describe the behavior occuring. 
-      placeholder: When doing ____, ____ occurs! 
+      placeholder: While doing the X operation, Y occurs and is not accounted for!
     validations:
       required: true
   - type: textarea
@@ -16,7 +16,7 @@ body:
     attributes:
       label: Expected behavior
       description: What is the intended behavior in the situation?
-      placeholder: The functionality ____ is expected to return ____, but instead it returns an invalid value.
+      placeholder: The functionality X is expected to return a Y, but instead it returns an invalid value.
     validations:
       required: true
   - type: dropdown
