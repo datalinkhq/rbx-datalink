@@ -1,0 +1,43 @@
+{
+	"version": "2.0.0",
+	"inputs": [
+		{
+			"id": "projectFile",
+			"description": "The name of the project.json file",
+			"default": "build",
+			"type": "promptString"
+		}
+	],
+	"tasks": [
+		{
+			"label": "Selene: Execute Linter",
+			"detail": "Run the selene linter step on the current project code",
+			"type": "shell",
+			"command": "selene .",
+			"group": { "kind": "build" },
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "new",
+				"focus": true
+			}
+		},
+
+		{
+			"label": "Rojo: Host Roblox Project",
+			"detail": "Host a Rojo server for a roblox project",
+			"type": "shell",
+			"command": "rojo serve ${input:projectFile}.project.json",
+			"group": { "kind": "build" },
+			"options": { "cwd": "${workspaceFolder}" },
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"focus": true,
+				"close": true
+			}
+		},
+	]
+}
