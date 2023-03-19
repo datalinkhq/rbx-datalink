@@ -5,7 +5,7 @@
 <div align="center">
 <br>
 <a href="https://npm.im/@datalinkhq/rbx-datalink"> <img alt="npm" height="35" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@2/assets/compact/available/npm_vector.svg"> </a>
-<a href="https://docs.datalink.dev/sdks/installation"> <img alt="docs" height="35" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@2/assets/compact/documentation/ghpages_vector.svg"> </a>
+<a href="https://docs.datalink.dev/sdks/overview"> <img alt="docs" height="35" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@2/assets/compact/documentation/ghpages_vector.svg"> </a>
 </div>
 
 ## Quick start & Documentation
