@@ -1,7 +1,7 @@
 {
-  "name": "@rbxts/rbx-datalink-ts",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@datalinkhq/rbx-datalink",
+  "version": "1.0.0-rbxts",
+  "description": "Datalink SDK's roblox-ts compatible module to setup game monitoring & analytics.",
   "main": "out/init.lua",
   "scripts": {
     "build": "rbxtsc",
