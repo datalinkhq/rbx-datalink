@@ -1,0 +1,11 @@
+# This file lists tools managed by Aftman, a cross-platform toolchain manager.
+# For more information, see https://github.com/LPGhatguy/aftman
+
+# To add a new tool, add an entry to this table.
+
+[tools]
+rojo = "rojo-rbx/rojo@7.3.0"
+selene = "Kampfkarren/selene@0.25.0"
+wally = "UpliftGames/wally@0.3.2"
+wally-package-types = "JohnnyMorganz/wally-package-types@1.2.1"
+luaulsp = "JohnnyMorganz/luau-lsp@1.24.1"

@@ -1,0 +1,48 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "[⚒️ - Rojo]: Build Development Project",
+			"type": "shell",
+			"command": "rojo build development.project.json -o build-output.rbxl",
+			"group": {
+				"kind": "build"
+			}
+		},
+		{
+			"label": "[🕹️ - Rojo]: Host Development Server",
+			"type": "shell",
+			"command": "rojo serve development.project.json",
+			"group": {
+				"kind": "build"
+			}
+		},
+
+		{
+			"label": "[📪 - Rojo]: Generate LSP Sourcemap",
+			"type": "shell",
+			"command": "rojo sourcemap --output sourcemap.json",
+			"group": {
+				"kind": "build"
+			}
+		},
+
+		{
+			"label": "[👀 - Selene]: Lint Project",
+			"type": "shell",
+			"command": "selene Source",
+			"group": {
+				"kind": "build"
+			}
+		},
+
+		{
+			"label": "[📦 - Wally]: Update Packages",
+			"type": "shell",
+			"command": "wally install",
+			"group": {
+				"kind": "build"
+			}
+		},
+	]
+}

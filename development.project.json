@@ -1,0 +1,27 @@
+{
+	"name": "[DEVELOPMENT] rbx-datalink",
+	"servePlaceIds": [ 0 ],
+	"tree": {
+		"$className": "DataModel",
+
+		"ServerStorage": {
+			"$className": "ServerStorage",
+
+			"DatalinkSDK": {
+				"$path": "src",
+
+				"Packages": {
+					"$path": "Packages"
+				}
+			}
+		},
+
+		"ServerScriptService": {
+			"$className": "ServerScriptService",
+
+			"DatalinkSDK-Tests": {
+				"$path": "tests"
+			}
+		}
+	}
+}

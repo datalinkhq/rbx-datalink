@@ -1,9 +1,17 @@
 [package]
 name = "datalinkhq/rbx-datalink"
+private = false
+version = "3.0.0-dev.0" # rbx-datalink was rewritten from the ground up at version 3.0.0
 description = "A futuristic and lightweight analytics platform for upcoming ROBLOX games. Learn more at https://datalink.dev."
-authors = ["AsyncMatrix <catbob614@gmail.com>", "DevComp <hi@devcomp.xyz>"]
-
-version = "2.0.1"
+authors = ["AsyncMatrix <Catbob614@gmail.com>", "DevComp <hi@devcomp.xyz>"]
+realm = "server"
 license = "MIT"
 registry = "https://github.com/UpliftGames/wally-index"
-realm = "shared"
+
+[dependencies]
+Console = "4x8matrix/console@2.0.2" # https://github.com/4x8Matrix/Console
+State = "4x8matrix/state@1.2.0" # https://github.com/4x8Matrix/State
+Signal = "sleitnick/signal@1.5.0" # https://sleitnick.github.io/RbxUtil/api/Signal
+Loader = "sleitnick/loader@2.0.0" # https://sleitnick.github.io/RbxUtil/api/Loader
+Promise = "evaera/promise@4.0.0" # https://eryn.io/roblox-lua-promise/
+Sift = "csqrl/sift@0.0.5" # https://csqrl.github.io/sift/
