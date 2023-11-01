@@ -4,7 +4,6 @@
 /packages
 *.tsbuildinfo
 
-
 *.rbxm
 *.rbxl
 
@@ -13,3 +12,5 @@
 
 *.log
 *.lock
+
+sourcemap.json
